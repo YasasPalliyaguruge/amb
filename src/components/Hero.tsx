@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import InteractivePlane from './InteractivePlane';
+import BotanicalHeroScene from './BotanicalHeroScene';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import { frameSequenceManifest } from '../theme/frameSequenceManifest';
 import { getSiteIcon } from '../utils/siteIcons';
@@ -76,6 +77,7 @@ export default function Hero() {
           </motion.div>
 
           <div className="hero-media-grid">
+            <BotanicalHeroScene />
             <InteractivePlane className="group h-full">
               <motion.div
                 style={{ y: mediaY }}
