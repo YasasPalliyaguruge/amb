@@ -139,6 +139,7 @@ function MainPortfolio() {
   const [isSplineBackgroundReady, setIsSplineBackgroundReady] = useState(false);
   const [isPreloaderSplineReady, setIsPreloaderSplineReady] = useState(false);
   const [arePublicSectionsReady, setArePublicSectionsReady] = useState(false);
+  const [arePublicAssetsReady, setArePublicAssetsReady] = useState(false);
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
   const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
   const [shouldRenderPreloader, setShouldRenderPreloader] = useState(true);
@@ -146,6 +147,7 @@ function MainPortfolio() {
 
   const isPublicExperienceReady =
     arePublicSectionsReady &&
+    arePublicAssetsReady &&
     hasMinimumLoaderTimeElapsed &&
     (isPreloaderSplineReady || hasLoaderSafetyElapsed) &&
     (isSplineBackgroundReady || hasLoaderSafetyElapsed);
@@ -165,9 +167,34 @@ function MainPortfolio() {
   }, []);
 
   useEffect(() => {
-    const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 1200);
+    let isMounted = true;
+
+    const waitForWindowLoad = new Promise<void>((resolve) => {
+      if (document.readyState === 'complete') {
+        resolve();
+        return;
+      }
+
+      window.addEventListener('load', () => resolve(), { once: true });
+    });
+
+    const waitForFonts = 'fonts' in document ? document.fonts.ready.then(() => undefined) : Promise.resolve();
+
+    Promise.all([waitForWindowLoad, waitForFonts]).finally(() => {
+      if (isMounted) {
+        setArePublicAssetsReady(true);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 3200);
     // Avoid a permanent blank page if an external Spline request stalls.
-    const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), 1400);
+    const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), 8500);
 
     return () => {
       window.clearTimeout(minimumTimer);

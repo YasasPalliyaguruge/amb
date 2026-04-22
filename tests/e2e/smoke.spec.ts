@@ -2,13 +2,15 @@ import { expect, test } from '@playwright/test';
 
 test('homepage renders key hero content', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Psychological support that stays clear, private, and grounded\./i })).toBeVisible();
+  await expect(page.locator('.public-site__content')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: /Psychological support that stays clear, private, and grounded\./i })).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole('link', { name: 'Book a Consultation' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
 });
 
 test('sign-in modal opens and closes with Escape', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('.public-site__content')).toBeVisible({ timeout: 15000 });
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');
@@ -17,6 +19,7 @@ test('sign-in modal opens and closes with Escape', async ({ page }) => {
 
 test('book navigation reaches the consultation desk section', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('.public-site__content')).toBeVisible({ timeout: 15000 });
   await page.getByRole('navigation').getByRole('link', { name: /^Book$/ }).click();
   await expect(page).toHaveURL(/#consultation-desk/);
 

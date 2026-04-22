@@ -1651,8 +1651,8 @@
 
   .public-spline-preloader::before {
     background:
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.58) 0%, rgb(var(--theme-bg-rgb) / 0.18) 32%, transparent 58%),
-      radial-gradient(ellipse at 50% 92%, rgb(var(--theme-bg-rgb) / 0.34), transparent 58%);
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.56) 0%, rgb(var(--theme-bg-rgb) / 0.18) 30%, transparent 58%),
+      radial-gradient(ellipse at 50% 88%, rgb(var(--theme-bg-rgb) / 0.3), transparent 54%);
   }
 
   .public-spline-preloader::after {
@@ -1666,14 +1666,16 @@
 
   .public-spline-preloader__scene {
     position: absolute;
-    inset: -10vh -12vw;
+    left: 50%;
+    top: 52%;
     z-index: 0;
-    width: auto;
-    height: auto;
-    min-height: 100svh;
+    width: clamp(18rem, 44vw, 34rem);
+    height: clamp(18rem, 58vh, 35rem);
+    min-height: 0;
     background: transparent;
     filter: saturate(1.04) contrast(1.02) brightness(1.03);
     opacity: 1;
+    transform: translate(-50%, -50%);
   }
 
   .public-spline-preloader__scene .spline-scene__canvas {
