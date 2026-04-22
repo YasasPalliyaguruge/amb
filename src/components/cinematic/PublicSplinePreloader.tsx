@@ -20,6 +20,7 @@ export default function PublicSplinePreloader({ isExiting, onSceneReady }: Publi
         decorative
         onLoad={onSceneReady}
       />
+      <div className="public-spline-preloader__watermark-cover" aria-hidden="true" />
     </div>
   );
 }

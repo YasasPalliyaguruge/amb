@@ -81,7 +81,7 @@ export default function ThemeStudio() {
         )}
       </AnimatePresence>
 
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50 hidden max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 md:flex">
+      <div className="theme-studio-dock pointer-events-none fixed bottom-4 right-4 z-50 hidden max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 md:flex">
         <AnimatePresence>
           {isOpen && (
             <motion.aside

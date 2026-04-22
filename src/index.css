@@ -53,6 +53,11 @@
     overflow: hidden;
   }
 
+  body.public-site-loading .scroll-progress,
+  body.public-site-loading .theme-studio-dock {
+    display: none !important;
+  }
+
   h1,
   h2,
   h3,
@@ -1627,9 +1632,9 @@
     z-index: 120;
     overflow: hidden;
     background:
-      radial-gradient(circle at 62% 44%, rgb(173 217 229 / 0.32), transparent 38%),
-      radial-gradient(circle at 28% 24%, rgb(255 250 244 / 0.88), transparent 34%),
-      linear-gradient(135deg, rgb(238 247 249 / 1), rgb(229 239 241 / 1));
+      radial-gradient(circle at 66% 44%, rgb(142 190 154 / 0.34), transparent 38%),
+      radial-gradient(circle at 28% 24%, rgb(255 248 238 / 0.52), transparent 34%),
+      linear-gradient(135deg, rgb(226 239 233 / 1), rgb(173 209 174 / 1));
     opacity: 1;
     transition: opacity 620ms ease, visibility 620ms ease;
   }
@@ -1651,8 +1656,8 @@
 
   .public-spline-preloader::before {
     background:
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.56) 0%, rgb(var(--theme-bg-rgb) / 0.18) 30%, transparent 58%),
-      radial-gradient(ellipse at 50% 88%, rgb(var(--theme-bg-rgb) / 0.3), transparent 54%);
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.2) 0%, rgb(var(--theme-bg-rgb) / 0.06) 28%, transparent 58%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.16) 0%, transparent 20%, transparent 72%, rgb(51 78 57 / 0.12) 100%);
   }
 
   .public-spline-preloader::after {
@@ -1666,20 +1671,34 @@
 
   .public-spline-preloader__scene {
     position: absolute;
-    left: 50%;
-    top: 52%;
+    inset: -16vh -14vw;
     z-index: 0;
-    width: clamp(18rem, 44vw, 34rem);
-    height: clamp(18rem, 58vh, 35rem);
-    min-height: 0;
+    width: auto;
+    height: auto;
+    min-height: 100svh;
     background: transparent;
-    filter: saturate(1.04) contrast(1.02) brightness(1.03);
+    filter: saturate(1.03) contrast(1.02) brightness(1.02);
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: scale(1.02);
+    transform-origin: center;
   }
 
   .public-spline-preloader__scene .spline-scene__canvas {
     opacity: 1;
+  }
+
+  .public-spline-preloader__watermark-cover {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    width: min(32rem, 44vw);
+    height: min(11rem, 19vh);
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 100% 100%, rgb(77 119 84 / 0.56), rgb(77 119 84 / 0.18) 38%, transparent 68%),
+      linear-gradient(135deg, transparent 0%, rgb(82 123 88 / 0.22) 56%, rgb(82 123 88 / 0.5) 100%);
+    backdrop-filter: blur(1px);
   }
 
   .public-spline-background {
