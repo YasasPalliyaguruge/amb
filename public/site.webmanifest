@@ -1,0 +1,17 @@
+{
+  "name": "Aadhila M. Biswas",
+  "short_name": "AMB",
+  "description": "Counseling and behavior therapy website with professional portfolio and consultation booking.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4ece3",
+  "theme_color": "#b85f3d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

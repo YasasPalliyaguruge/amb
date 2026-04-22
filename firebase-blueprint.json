@@ -1,0 +1,133 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["client", "admin"] },
+        "createdAt": { "type": "timestamp" },
+        "phone": { "type": "string" },
+        "timezone": { "type": "string" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Availability": {
+      "title": "Availability",
+      "description": "Available time slots for a specific date (document ID = YYYY-MM-DD)",
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "array",
+          "items": { "type": "string", "description": "HH:mm 24h format time slot" }
+        }
+      },
+      "required": ["slots"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A booked consultation",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD" },
+        "timeSlot": { "type": "string", "description": "HH:mm" },
+        "serviceType": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "completed", "cancelled"] },
+        "notes": { "type": "string" }
+      },
+      "required": ["clientId", "clientName", "date", "timeSlot", "serviceType", "status"]
+    },
+    "ClientNote": {
+      "title": "ClientNote",
+      "description": "Private admin-only note for a specific client",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["clientId", "text", "createdAt"]
+    },
+    "PracticeSettings": {
+      "title": "PracticeSettings",
+      "description": "Global practice settings (document ID = 'general')",
+      "type": "object",
+      "properties": {
+        "daysOff": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 6 },
+          "description": "Day of week indices (0=Sun, 6=Sat)"
+        },
+        "bufferTime": { "type": "integer", "description": "Buffer time in minutes between appointments" },
+        "defaultDuration": { "type": "integer", "description": "Default appointment duration in minutes" }
+      },
+      "required": ["daysOff", "bufferTime", "defaultDuration"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable log of admin actions",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "action": { "type": "string", "description": "e.g. ADD_AVAILABILITY_SLOT, UPDATE_APPOINTMENT_STATUS" },
+        "details": { "type": "string" },
+        "targetId": { "type": "string", "description": "Optional: ID of affected document" },
+        "timestamp": { "type": "timestamp" }
+      },
+      "required": ["adminId", "adminEmail", "action", "details", "timestamp"]
+    },
+    "Mail": {
+      "title": "Mail",
+      "description": "Outbound email queue consumed by Firebase Trigger Email extension",
+      "type": "object",
+      "properties": {
+        "to": { "type": "string", "description": "Recipient email address" },
+        "message": {
+          "type": "object",
+          "properties": {
+            "subject": { "type": "string" },
+            "html": { "type": "string" },
+            "text": { "type": "string" }
+          },
+          "required": ["subject"]
+        }
+      },
+      "required": ["to", "message"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles. Created on first Google Sign-In."
+    },
+    "/availability/{dateString}": {
+      "schema": { "$ref": "#/entities/Availability" },
+      "description": "Available slots per date (YYYY-MM-DD). Managed by admin."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Booked appointments. Created via Firestore transaction in bookingService."
+    },
+    "/clientNotes/{noteId}": {
+      "schema": { "$ref": "#/entities/ClientNote" },
+      "description": "Private admin-only clinical notes per client. Read/write restricted to admin role."
+    },
+    "/settings/general": {
+      "schema": { "$ref": "#/entities/PracticeSettings" },
+      "description": "Single document holding practice-wide configuration. Publicly readable, admin-writable."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Append-only audit trail. Admin read only. Cannot be updated or deleted."
+    },
+    "/mail/{mailId}": {
+      "schema": { "$ref": "#/entities/Mail" },
+      "description": "Outbound email queue. Written by booking/reschedule transactions, consumed by Firebase Trigger Email extension."
+    }
+  }
+}
