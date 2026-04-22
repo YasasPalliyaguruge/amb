@@ -1671,7 +1671,7 @@
 
   .public-spline-preloader__scene {
     position: absolute;
-    inset: -16vh -14vw;
+    inset: -18vh -20vw -24vh -16vw;
     z-index: 0;
     width: auto;
     height: auto;
@@ -1687,18 +1687,11 @@
     opacity: 1;
   }
 
-  .public-spline-preloader__watermark-cover {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    z-index: 3;
-    width: min(32rem, 44vw);
-    height: min(11rem, 19vh);
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse at 100% 100%, rgb(77 119 84 / 0.56), rgb(77 119 84 / 0.18) 38%, transparent 68%),
-      linear-gradient(135deg, transparent 0%, rgb(82 123 88 / 0.22) 56%, rgb(82 123 88 / 0.5) 100%);
-    backdrop-filter: blur(1px);
+  .public-spline-preloader :is(a[href*="spline.design"], a[href*="splinetool.com"], [class*="watermark"], [class*="Watermark"]) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 
   .public-spline-background {
