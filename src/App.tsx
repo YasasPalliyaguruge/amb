@@ -14,6 +14,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import SplineBackground from './components/cinematic/SplineBackground';
+import PublicSplinePreloader from './components/cinematic/PublicSplinePreloader';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
@@ -27,6 +28,19 @@ const AcademicTenure = lazy(() => import('./components/AcademicTenure'));
 const DoodleArt = lazy(() => import('./components/DoodleArt'));
 const ConsultationExperience = lazy(() => import('./components/ConsultationExperience'));
 const ConsultationDesk = lazy(() => import('./components/ConsultationDesk'));
+
+function preloadPublicExperience() {
+  return Promise.all([
+    import('./components/Ethos'),
+    import('./components/ClinicalPractice'),
+    import('./components/AcademicTenure'),
+    import('./components/DoodleArt'),
+    import('./components/ConsultationExperience'),
+    import('./components/ConsultationDesk'),
+    import('./components/Footer'),
+    import('./components/LoginModal'),
+  ]);
+}
 
 function RouteLoader() {
   const { siteSettings } = useSiteSettings();
@@ -122,7 +136,62 @@ function ScrollToHash() {
 
 function MainPortfolio() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSplineBackgroundReady, setIsSplineBackgroundReady] = useState(false);
+  const [isPreloaderSplineReady, setIsPreloaderSplineReady] = useState(false);
+  const [arePublicSectionsReady, setArePublicSectionsReady] = useState(false);
+  const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
+  const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
+  const [shouldRenderPreloader, setShouldRenderPreloader] = useState(true);
   const { siteSettings } = useSiteSettings();
+
+  const isPublicExperienceReady =
+    arePublicSectionsReady &&
+    hasMinimumLoaderTimeElapsed &&
+    (isPreloaderSplineReady || hasLoaderSafetyElapsed) &&
+    (isSplineBackgroundReady || hasLoaderSafetyElapsed);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    preloadPublicExperience().finally(() => {
+      if (isMounted) {
+        setArePublicSectionsReady(true);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 1200);
+    // Avoid a permanent blank page if an external Spline request stalls.
+    const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), 1400);
+
+    return () => {
+      window.clearTimeout(minimumTimer);
+      window.clearTimeout(safetyTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle('public-site-loading', !isPublicExperienceReady);
+
+    return () => {
+      document.body.classList.remove('public-site-loading');
+    };
+  }, [isPublicExperienceReady]);
+
+  useEffect(() => {
+    if (!isPublicExperienceReady) {
+      setShouldRenderPreloader(true);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setShouldRenderPreloader(false), 650);
+    return () => window.clearTimeout(timeoutId);
+  }, [isPublicExperienceReady]);
 
   const visibleSections = siteSettings.homepage.sectionOrder.filter(
     (sectionId) => siteSettings.homepage.visibility[sectionId]
@@ -150,28 +219,36 @@ function MainPortfolio() {
   };
 
   return (
-    <div className="public-site relative">
-      <SplineBackground />
-      <a href="#main-content" className="skip-link">
-        {siteSettings.appCopy.skipLinkLabel}
-      </a>
-      <Navbar onLoginClick={() => setIsLoginModalOpen(true)} />
-      <main id="main-content" className="pb-28 lg:pb-0">
-        {visibleSections.map((sectionId) => (
-          <Suspense key={sectionId} fallback={sectionId === 'hero' ? null : <SectionLoader />}>
-            {renderSection(sectionId)}
-          </Suspense>
-        ))}
-      </main>
-      <Suspense fallback={null}>
-        <Footer />
-      </Suspense>
-      <Suspense fallback={null}>
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
+    <div className={`public-site relative ${isPublicExperienceReady ? 'public-site--ready' : 'public-site--loading'}`}>
+      <SplineBackground onSceneReady={() => setIsSplineBackgroundReady(true)} />
+      {shouldRenderPreloader && (
+        <PublicSplinePreloader
+          isExiting={isPublicExperienceReady}
+          onSceneReady={() => setIsPreloaderSplineReady(true)}
         />
-      </Suspense>
+      )}
+      <div className="public-site__content" aria-hidden={isPublicExperienceReady ? undefined : 'true'}>
+        <a href="#main-content" className="skip-link">
+          {siteSettings.appCopy.skipLinkLabel}
+        </a>
+        <Navbar onLoginClick={() => setIsLoginModalOpen(true)} />
+        <main id="main-content" className="pb-28 lg:pb-0">
+          {visibleSections.map((sectionId) => (
+            <Suspense key={sectionId} fallback={sectionId === 'hero' ? null : <SectionLoader />}>
+              {renderSection(sectionId)}
+            </Suspense>
+          ))}
+        </main>
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
+        <Suspense fallback={null}>
+          <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={() => setIsLoginModalOpen(false)}
+          />
+        </Suspense>
+      </div>
     </div>
   );
 }

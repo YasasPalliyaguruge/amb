@@ -49,6 +49,10 @@
     overflow-x: hidden;
   }
 
+  body.public-site-loading {
+    overflow: hidden;
+  }
+
   h1,
   h2,
   h3,
@@ -1599,10 +1603,81 @@
     isolation: isolate;
   }
 
+  .public-site__content {
+    opacity: 1;
+    transition: opacity 560ms ease;
+  }
+
+  .public-site--loading .public-site__content {
+    opacity: 0;
+    pointer-events: none;
+    user-select: none;
+    visibility: hidden;
+  }
+
   .public-site main,
   .public-site footer {
     position: relative;
     z-index: 1;
+  }
+
+  .public-spline-preloader {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 62% 44%, rgb(173 217 229 / 0.32), transparent 38%),
+      radial-gradient(circle at 28% 24%, rgb(255 250 244 / 0.88), transparent 34%),
+      linear-gradient(135deg, rgb(238 247 249 / 1), rgb(229 239 241 / 1));
+    opacity: 1;
+    transition: opacity 620ms ease, visibility 620ms ease;
+  }
+
+  .public-spline-preloader--leaving {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .public-spline-preloader::before,
+  .public-spline-preloader::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .public-spline-preloader::before {
+    background:
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.58) 0%, rgb(var(--theme-bg-rgb) / 0.18) 32%, transparent 58%),
+      radial-gradient(ellipse at 50% 92%, rgb(var(--theme-bg-rgb) / 0.34), transparent 58%);
+  }
+
+  .public-spline-preloader::after {
+    background-image:
+      linear-gradient(90deg, rgb(var(--theme-text-rgb) / 0.025) 1px, transparent 1px),
+      linear-gradient(180deg, rgb(var(--theme-text-rgb) / 0.018) 1px, transparent 1px);
+    background-size: 4px 4px;
+    mix-blend-mode: multiply;
+    opacity: 0.45;
+  }
+
+  .public-spline-preloader__scene {
+    position: absolute;
+    inset: -10vh -12vw;
+    z-index: 0;
+    width: auto;
+    height: auto;
+    min-height: 100svh;
+    background: transparent;
+    filter: saturate(1.04) contrast(1.02) brightness(1.03);
+    opacity: 1;
+  }
+
+  .public-spline-preloader__scene .spline-scene__canvas {
+    opacity: 1;
   }
 
   .public-spline-background {
