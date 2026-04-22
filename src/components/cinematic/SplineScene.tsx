@@ -7,6 +7,7 @@ type SplineSceneProps = {
   scene?: string;
   className?: string;
   decorative?: boolean;
+  transparentBackground?: boolean;
   onLoad?: (app: Application) => void;
 };
 
@@ -14,6 +15,7 @@ export default function SplineScene({
   scene,
   className = '',
   decorative = true,
+  transparentBackground = true,
   onLoad,
 }: SplineSceneProps) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -28,6 +30,11 @@ export default function SplineScene({
         <Spline
           scene={scene}
           onLoad={(app) => {
+            if (transparentBackground) {
+              app.setBackgroundColor('rgba(0, 0, 0, 0)');
+              app.canvas.style.background = 'transparent';
+              app.requestRender();
+            }
             setIsLoaded(true);
             onLoad?.(app);
           }}
