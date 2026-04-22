@@ -1564,26 +1564,6 @@
     aspect-ratio: 4 / 4.08;
   }
 
-  .hero-spline-accent {
-    position: absolute;
-    top: clamp(0.85rem, 2vw, 1.15rem);
-    right: clamp(0.85rem, 2vw, 1.15rem);
-    z-index: 4;
-    display: none;
-    width: clamp(7rem, 12vw, 10.5rem);
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 0.22);
-    border-radius: calc(var(--theme-radius-lg) + 0.15rem);
-    background:
-      radial-gradient(circle at 50% 20%, rgb(var(--theme-surface-strong-rgb) / 0.9), transparent 58%),
-      rgb(var(--theme-ink-rgb) / 0.48);
-    box-shadow:
-      0 20px 52px rgb(var(--theme-ink-rgb) / 0.24),
-      inset 0 1px 0 rgb(255 255 255 / 0.18);
-    backdrop-filter: blur(calc(var(--theme-blur) * 0.7));
-  }
-
   .spline-scene {
     position: relative;
     width: 100%;
@@ -1637,6 +1617,44 @@
     border-radius: 999px;
     background: radial-gradient(circle, rgb(255 255 255 / 0.18), transparent 66%);
     box-shadow: 0 0 42px rgb(var(--theme-primary-rgb) / 0.28);
+  }
+
+  .public-site {
+    isolation: isolate;
+  }
+
+  .public-site main,
+  .public-site footer {
+    position: relative;
+    z-index: 1;
+  }
+
+  .public-spline-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 74% 12%, rgb(var(--theme-accent-rgb) / 0.16), transparent 34%),
+      radial-gradient(circle at 20% 24%, rgb(var(--theme-primary-rgb) / 0.13), transparent 30%),
+      linear-gradient(135deg, rgb(var(--theme-bg-rgb) / 1), rgb(var(--theme-surface-rgb) / 0.92));
+  }
+
+  .public-spline-background__scene {
+    position: absolute;
+    inset: 0;
+    min-height: 100svh;
+    opacity: 0.84;
+  }
+
+  .public-spline-background__veil {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.92) 0%, rgb(var(--theme-bg-rgb) / 0.72) 42%, rgb(var(--theme-bg-rgb) / 0.82) 100%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.72) 0%, rgb(var(--theme-bg-rgb) / 0.44) 46%, rgb(var(--theme-bg-rgb) / 0.9) 100%);
+    backdrop-filter: blur(0.5px);
   }
 
   .hero-supporting-frame img {
@@ -2415,10 +2433,6 @@
 
     .hero-media-grid {
       grid-template-columns: minmax(0, 1fr) 10.75rem;
-    }
-
-    .hero-spline-accent {
-      display: block;
     }
 
     .hero-supporting-grid {

@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import InteractivePlane from './InteractivePlane';
-import HeroSplineAccent from './cinematic/HeroSplineAccent';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import { frameSequenceManifest } from '../theme/frameSequenceManifest';
 import { getSiteIcon } from '../utils/siteIcons';
@@ -98,7 +97,6 @@ export default function Hero() {
                     decoding="async"
                   />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_30%,rgb(var(--theme-ink-rgb)/0.62)_100%)]" />
-                  <HeroSplineAccent fallbackImage={supportingFrames[0] ?? heroImage} />
                   <div className="absolute bottom-0 left-0 right-0 grid gap-3 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                     <div className="space-y-1.5">
                       <p className="utility-label text-white/56">{siteSettings.hero.mediaEyebrow}</p>

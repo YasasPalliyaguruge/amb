@@ -5,7 +5,7 @@ import type { Application } from '@splinetool/runtime';
 const Spline = lazy(() => import('@splinetool/react-spline'));
 
 type SplineSceneProps = {
-  scene: string;
+  scene?: string;
   fallbackImage?: string;
   fallbackAlt?: string;
   className?: string;
@@ -85,7 +85,8 @@ export default function SplineScene({
     return () => observer.disconnect();
   }, [shouldReduceMotion, shouldUseFallback]);
 
-  const showFallback = shouldReduceMotion || shouldUseFallback || !isVisible;
+  const hasScene = Boolean(scene?.trim());
+  const showFallback = !hasScene || shouldReduceMotion || shouldUseFallback || !isVisible;
 
   return (
     <div ref={containerRef} className={`spline-scene ${className}`} aria-hidden={decorative ? 'true' : undefined}>
@@ -96,7 +97,7 @@ export default function SplineScene({
           {!isLoaded && <SplineFallback fallbackImage={fallbackImage} fallbackAlt={fallbackAlt} decorative={decorative} />}
           <Suspense fallback={<SplineFallback fallbackImage={fallbackImage} fallbackAlt={fallbackAlt} decorative={decorative} />}>
             <Spline
-              scene={scene}
+              scene={scene ?? ''}
               onLoad={(app) => {
                 setIsLoaded(true);
                 onLoad?.(app);

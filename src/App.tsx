@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import SplineBackground from './components/cinematic/SplineBackground';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
@@ -149,7 +150,8 @@ function MainPortfolio() {
   };
 
   return (
-    <div className="relative">
+    <div className="public-site relative">
+      <SplineBackground />
       <a href="#main-content" className="skip-link">
         {siteSettings.appCopy.skipLinkLabel}
       </a>
