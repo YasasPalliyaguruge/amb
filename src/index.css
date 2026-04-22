@@ -1564,6 +1564,81 @@
     aspect-ratio: 4 / 4.08;
   }
 
+  .hero-spline-accent {
+    position: absolute;
+    top: clamp(0.85rem, 2vw, 1.15rem);
+    right: clamp(0.85rem, 2vw, 1.15rem);
+    z-index: 4;
+    display: none;
+    width: clamp(7rem, 12vw, 10.5rem);
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 0.22);
+    border-radius: calc(var(--theme-radius-lg) + 0.15rem);
+    background:
+      radial-gradient(circle at 50% 20%, rgb(var(--theme-surface-strong-rgb) / 0.9), transparent 58%),
+      rgb(var(--theme-ink-rgb) / 0.48);
+    box-shadow:
+      0 20px 52px rgb(var(--theme-ink-rgb) / 0.24),
+      inset 0 1px 0 rgb(255 255 255 / 0.18);
+    backdrop-filter: blur(calc(var(--theme-blur) * 0.7));
+  }
+
+  .spline-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 45%, rgb(var(--theme-primary-rgb) / 0.16), transparent 54%),
+      rgb(var(--theme-ink-rgb) / 0.18);
+  }
+
+  .spline-scene__canvas,
+  .spline-scene__canvas canvas,
+  .spline-scene__fallback,
+  .spline-scene__fallback-image {
+    width: 100%;
+    height: 100%;
+  }
+
+  .spline-scene__canvas {
+    display: block;
+    opacity: 0;
+    transition: opacity 420ms ease;
+  }
+
+  .spline-scene__canvas--loaded {
+    opacity: 1;
+  }
+
+  .spline-scene__fallback,
+  .spline-scene__fallback-image {
+    position: absolute;
+    inset: 0;
+  }
+
+  .spline-scene__fallback-image {
+    object-fit: cover;
+    filter: saturate(0.72) contrast(1.08) brightness(0.88);
+    transform: scale(1.08);
+  }
+
+  .spline-scene__fallback {
+    display: grid;
+    place-items: center;
+  }
+
+  .spline-scene__fallback span {
+    width: 42%;
+    aspect-ratio: 1 / 1;
+    border: 1px solid rgb(255 255 255 / 0.28);
+    border-radius: 999px;
+    background: radial-gradient(circle, rgb(255 255 255 / 0.18), transparent 66%);
+    box-shadow: 0 0 42px rgb(var(--theme-primary-rgb) / 0.28);
+  }
+
   .hero-supporting-frame img {
     aspect-ratio: 1 / 0.84;
   }
@@ -2340,6 +2415,10 @@
 
     .hero-media-grid {
       grid-template-columns: minmax(0, 1fr) 10.75rem;
+    }
+
+    .hero-spline-accent {
+      display: block;
     }
 
     .hero-supporting-grid {

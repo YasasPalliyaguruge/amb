@@ -10,13 +10,14 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-          if (id.includes('/firebase/app')) return 'firebase-core';
-          if (id.includes('/firebase/auth')) return 'firebase-auth';
-          if (id.includes('/firebase/firestore')) return 'firebase-firestore';
-          if (id.includes('/firebase/storage')) return 'firebase-storage';
-          if (id.includes('firebase')) return 'firebase-vendor';
-          if (id.includes('framer-motion') || id.includes('motion') || id.includes('gsap')) return 'motion-vendor';
-          if (id.includes('react')) return 'react-vendor';
+          const normalizedId = id.replace(/\\/g, '/');
+          if (normalizedId.includes('@splinetool')) return 'spline-vendor';
+          if (normalizedId.includes('/firebase/app')) return 'firebase-core';
+          if (normalizedId.includes('/firebase/auth')) return 'firebase-auth';
+          if (normalizedId.includes('/firebase/firestore')) return 'firebase-firestore';
+          if (normalizedId.includes('/firebase/storage')) return 'firebase-storage';
+          if (normalizedId.includes('firebase')) return 'firebase-vendor';
+          if (normalizedId.includes('framer-motion') || normalizedId.includes('motion') || normalizedId.includes('gsap')) return 'motion-vendor';
           return 'vendor';
         },
       },
