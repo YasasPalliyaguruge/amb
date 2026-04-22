@@ -1643,17 +1643,23 @@
 
   .public-spline-background__scene {
     position: absolute;
-    inset: 0;
+    inset: -8vh -12vw -8vh -2vw;
+    width: auto;
+    height: auto;
     min-height: 100svh;
-    opacity: 0.84;
+    opacity: 0.78;
+    filter: saturate(0.82) contrast(0.92) brightness(1.08);
+    mix-blend-mode: multiply;
+    transform: scale(1.12) translateX(-9vw);
+    transform-origin: center;
   }
 
   .public-spline-background__veil {
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.92) 0%, rgb(var(--theme-bg-rgb) / 0.72) 42%, rgb(var(--theme-bg-rgb) / 0.82) 100%),
-      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.72) 0%, rgb(var(--theme-bg-rgb) / 0.44) 46%, rgb(var(--theme-bg-rgb) / 0.9) 100%);
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.8) 0%, rgb(var(--theme-bg-rgb) / 0.48) 42%, rgb(var(--theme-bg-rgb) / 0.64) 100%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.64) 0%, rgb(var(--theme-bg-rgb) / 0.24) 48%, rgb(var(--theme-bg-rgb) / 0.84) 100%);
     backdrop-filter: blur(0.5px);
   }
 

@@ -1,6 +1,6 @@
 import SplineScene from './SplineScene';
 
-const CLEAN_SPLINE_BACKGROUND_SCENE = '';
+const CLEAN_SPLINE_BACKGROUND_SCENE = 'https://prod.spline.design/mk2OfkXd-CKewFlt/scene.splinecode';
 const SPLINE_BACKGROUND_POSTER = '';
 
 export default function SplineBackground() {
