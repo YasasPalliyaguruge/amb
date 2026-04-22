@@ -1583,9 +1583,7 @@
     height: 100%;
     min-height: inherit;
     overflow: hidden;
-    background:
-      radial-gradient(circle at 56% 44%, rgb(155 196 213 / 0.34), transparent 46%),
-      rgb(207 222 229 / 0.16);
+    background: transparent;
   }
 
   .spline-scene__canvas,
