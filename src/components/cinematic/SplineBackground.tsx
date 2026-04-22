@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import SplineScene from './SplineScene';
 
 const CLEAN_SPLINE_BACKGROUND_SCENE = 'https://prod.spline.design/mk2OfkXd-CKewFlt/scene.splinecode';
-const SPLINE_BACKGROUND_POSTER = '';
 
 export default function SplineBackground() {
   const [isHeroActive, setIsHeroActive] = useState(true);
@@ -27,11 +26,8 @@ export default function SplineBackground() {
     <div className={`public-spline-background ${isHeroActive ? 'public-spline-background--hero' : ''}`} aria-hidden="true">
       <SplineScene
         scene={CLEAN_SPLINE_BACKGROUND_SCENE}
-        fallbackImage={SPLINE_BACKGROUND_POSTER}
-        fallbackAlt=""
         className="public-spline-background__scene"
         decorative
-        minDesktopWidth={1024}
       />
       <div className="public-spline-background__veil" />
     </div>
