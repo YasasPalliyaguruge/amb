@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import BeeCursor from './components/cinematic/BeeCursor';
 import SplineBackground from './components/cinematic/SplineBackground';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 
@@ -152,6 +153,7 @@ function MainPortfolio() {
   return (
     <div className="public-site relative">
       <SplineBackground />
+      <BeeCursor />
       <a href="#main-content" className="skip-link">
         {siteSettings.appCopy.skipLinkLabel}
       </a>

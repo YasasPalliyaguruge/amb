@@ -1571,8 +1571,8 @@
     min-height: inherit;
     overflow: hidden;
     background:
-      radial-gradient(circle at 50% 45%, rgb(var(--theme-primary-rgb) / 0.16), transparent 54%),
-      rgb(var(--theme-ink-rgb) / 0.18);
+      radial-gradient(circle at 56% 44%, rgb(155 196 213 / 0.34), transparent 46%),
+      rgb(207 222 229 / 0.16);
   }
 
   .spline-scene__canvas,
@@ -1606,17 +1606,129 @@
   }
 
   .spline-scene__fallback {
-    display: grid;
-    place-items: center;
+    overflow: hidden;
   }
 
-  .spline-scene__fallback span {
-    width: 42%;
-    aspect-ratio: 1 / 1;
-    border: 1px solid rgb(255 255 255 / 0.28);
-    border-radius: 999px;
-    background: radial-gradient(circle, rgb(255 255 255 / 0.18), transparent 66%);
-    box-shadow: 0 0 42px rgb(var(--theme-primary-rgb) / 0.28);
+  .spline-scene__fallback-botanical {
+    position: absolute;
+    left: min(64vw, 69%);
+    top: 48%;
+    width: clamp(16rem, 25vw, 29rem);
+    height: auto;
+    filter: saturate(0.86) drop-shadow(0 28px 44px rgb(49 76 82 / 0.18));
+    opacity: 0.42;
+    overflow: visible;
+    transform: translate(-50%, -50%) rotate(-5deg);
+    transform-origin: 50% 72%;
+    animation: floral-fallback-breathe 9s ease-in-out infinite;
+  }
+
+  .public-spline-background--hero .spline-scene__fallback-botanical {
+    filter: saturate(0.96) drop-shadow(0 30px 52px rgb(49 76 82 / 0.2));
+    opacity: 1;
+  }
+
+  .spline-scene__fallback-stem {
+    fill: none;
+    stroke: rgb(89 139 104 / 0.44);
+    stroke-linecap: round;
+    stroke-width: 3.2;
+  }
+
+  .spline-scene__fallback-leaf {
+    fill: rgb(115 158 121 / 0.22);
+    stroke: rgb(84 135 98 / 0.24);
+    stroke-width: 1.2;
+  }
+
+  .spline-scene__fallback-flower {
+    animation: fallback-flower-float 7.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .spline-scene__fallback-flower--late {
+    animation-delay: -2.1s;
+  }
+
+  .spline-scene__fallback-flower--yellow ellipse {
+    fill: url(#fallbackYellowPetal);
+  }
+
+  .spline-scene__fallback-flower--pink ellipse {
+    fill: url(#fallbackPinkPetal);
+  }
+
+  .spline-scene__fallback-flower circle {
+    fill: rgb(255 255 255 / 0.86);
+  }
+
+  .spline-scene__fallback-bee {
+    animation: bee-fallback-drift 4.8s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .spline-scene__fallback-bee-wing {
+    fill: rgb(255 255 255 / 0.68);
+    stroke: rgb(105 132 126 / 0.3);
+    stroke-width: 1;
+  }
+
+  .spline-scene__fallback-bee-body {
+    fill: rgb(234 190 47 / 0.96);
+  }
+
+  .spline-scene__fallback-bee-head {
+    fill: rgb(48 44 38 / 0.86);
+  }
+
+  .spline-scene__fallback-bee-line {
+    fill: none;
+    stroke: rgb(48 44 38 / 0.72);
+    stroke-linecap: round;
+    stroke-width: 4;
+  }
+
+  @keyframes floral-fallback-breathe {
+    0%,
+    100% {
+      transform: translate(-50%, -50%) rotate(-5deg) scale(1);
+    }
+    50% {
+      transform: translate(-50%, -52%) rotate(-3deg) scale(1.025);
+    }
+  }
+
+  @keyframes fallback-flower-float {
+    0%,
+    100% {
+      translate: 0 0;
+      rotate: 0deg;
+    }
+    50% {
+      translate: 0 -5px;
+      rotate: 1.4deg;
+    }
+  }
+
+  @keyframes bee-fallback-drift {
+    0%,
+    100% {
+      transform: translate(0, 0) rotate(-8deg);
+    }
+    50% {
+      transform: translate(0.7rem, -0.45rem) rotate(5deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spline-scene__fallback-botanical,
+    .spline-scene__fallback-flower,
+    .spline-scene__fallback-bee,
+    .bee-cursor__wing {
+      animation: none;
+    }
   }
 
   .public-site {
@@ -1643,24 +1755,139 @@
 
   .public-spline-background__scene {
     position: absolute;
-    inset: -8vh -12vw -8vh -2vw;
+    inset: -10vh -18vw;
     width: auto;
     height: auto;
     min-height: 100svh;
-    opacity: 0.78;
-    filter: saturate(0.82) contrast(0.92) brightness(1.08);
+    opacity: 0.34;
+    filter: saturate(0.72) contrast(0.88) brightness(1.02);
     mix-blend-mode: multiply;
-    transform: scale(1.12) translateX(-9vw);
+    transform: scale(1.1);
     transform-origin: center;
+    transition: opacity 420ms ease, filter 420ms ease, transform 420ms ease;
+  }
+
+  .public-spline-background--hero .public-spline-background__scene {
+    opacity: 1;
+    filter: saturate(0.9) contrast(0.95) brightness(0.9);
+    mix-blend-mode: normal;
+    transform: scale(1.08) translateX(10vw);
   }
 
   .public-spline-background__veil {
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.8) 0%, rgb(var(--theme-bg-rgb) / 0.48) 42%, rgb(var(--theme-bg-rgb) / 0.64) 100%),
-      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.64) 0%, rgb(var(--theme-bg-rgb) / 0.24) 48%, rgb(var(--theme-bg-rgb) / 0.84) 100%);
+      radial-gradient(circle at 50% 42%, rgb(var(--theme-bg-rgb) / 0.1), rgb(var(--theme-bg-rgb) / 0.5) 62%, rgb(var(--theme-bg-rgb) / 0.82) 100%),
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.84) 0%, rgb(var(--theme-bg-rgb) / 0.46) 46%, rgb(var(--theme-bg-rgb) / 0.72) 100%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.68) 0%, rgb(var(--theme-bg-rgb) / 0.2) 48%, rgb(var(--theme-bg-rgb) / 0.86) 100%);
     backdrop-filter: blur(0.5px);
+    transition: background 420ms ease;
+  }
+
+  .public-spline-background--hero .public-spline-background__veil {
+    background:
+      radial-gradient(circle at 60% 47%, transparent 0 24rem, rgb(214 225 232 / 0.04) 42rem, rgb(var(--theme-bg-rgb) / 0.22) 100%),
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.6) 0%, rgb(var(--theme-bg-rgb) / 0.16) 32%, transparent 54%, rgb(var(--theme-bg-rgb) / 0.1) 100%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.22) 0%, transparent 50%, rgb(var(--theme-bg-rgb) / 0.54) 100%);
+  }
+
+  .hero-cardless {
+    position: relative;
+    min-height: min(58rem, 100svh);
+    display: grid;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .hero-cardless::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 62% 47%, transparent 0 25rem, rgb(var(--theme-bg-rgb) / 0.08) 44rem),
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.72) 0%, rgb(var(--theme-bg-rgb) / 0.34) 28%, rgb(var(--theme-bg-rgb) / 0.04) 48%, transparent 70%);
+  }
+
+  .hero-cardless-frame {
+    position: relative;
+    z-index: 1;
+    min-height: calc(100svh - 5.2rem);
+    display: grid;
+    align-items: center;
+    padding-top: clamp(1rem, 3vw, 3rem);
+    padding-bottom: clamp(2rem, 5vw, 4rem);
+  }
+
+  .hero-cardless-content {
+    display: grid;
+    align-content: center;
+    gap: 1.75rem;
+    width: min(100%, 38rem);
+  }
+
+  .bee-cursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2147483000;
+    width: clamp(2rem, 3.2vw, 3.2rem);
+    height: clamp(1.65rem, 2.8vw, 2.7rem);
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 12px 18px rgb(var(--theme-ink-rgb) / 0.22));
+    transition: opacity 180ms ease;
+    will-change: transform;
+  }
+
+  .bee-cursor--visible {
+    opacity: 0.95;
+  }
+
+  .bee-cursor svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .bee-cursor__wing {
+    fill: rgb(255 255 255 / 0.68);
+    stroke: rgb(var(--theme-accent-rgb) / 0.5);
+    stroke-width: 1.2;
+    transform-origin: center;
+    animation: bee-wing 160ms ease-in-out infinite alternate;
+  }
+
+  .bee-cursor__wing--right {
+    animation-delay: 60ms;
+  }
+
+  .bee-cursor__body {
+    fill: rgb(232 181 51 / 0.96);
+    stroke: rgb(var(--theme-ink-rgb) / 0.44);
+    stroke-width: 1.1;
+  }
+
+  .bee-cursor__stripe,
+  .bee-cursor__antenna {
+    fill: none;
+    stroke: rgb(var(--theme-ink-rgb) / 0.78);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  .bee-cursor__head {
+    fill: rgb(var(--theme-ink-rgb) / 0.88);
+  }
+
+  @keyframes bee-wing {
+    from {
+      transform: rotate(-7deg) scaleY(0.96);
+    }
+    to {
+      transform: rotate(8deg) scaleY(1.06);
+    }
   }
 
   .hero-supporting-frame img {
@@ -3075,11 +3302,18 @@
   }
 }
 
-@media (max-width: 640px) {
-  .section-shell {
-    padding-inline: 1rem;
-    padding-block: 2.45rem;
-  }
+  @media (max-width: 640px) {
+    .public-spline-background--hero .spline-scene__fallback-botanical {
+      left: 66%;
+      top: 48%;
+      width: 15.5rem;
+      opacity: 0.74;
+    }
+
+    .section-shell {
+      padding-inline: 1rem;
+      padding-block: 2.45rem;
+    }
 
   .section-shell--hero {
     padding-top: 5.35rem;
