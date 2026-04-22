@@ -10,8 +10,6 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-          const normalizedId = id.replace(/\\/g, '/');
-          if (normalizedId.includes('/three/')) return 'three-vendor';
           if (id.includes('/firebase/app')) return 'firebase-core';
           if (id.includes('/firebase/auth')) return 'firebase-auth';
           if (id.includes('/firebase/firestore')) return 'firebase-firestore';

@@ -13,8 +13,6 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import CinematicFloralBackdrop from './components/CinematicFloralBackdrop';
-import FloralSectionReveal from './components/FloralSectionReveal';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
@@ -151,21 +149,16 @@ function MainPortfolio() {
   };
 
   return (
-    <div className="cinematic-public relative min-h-screen overflow-hidden">
-      <CinematicFloralBackdrop />
+    <div className="relative">
       <a href="#main-content" className="skip-link">
         {siteSettings.appCopy.skipLinkLabel}
       </a>
       <Navbar onLoginClick={() => setIsLoginModalOpen(true)} />
       <main id="main-content" className="pb-28 lg:pb-0">
-        {visibleSections.map((sectionId, index) => (
-          <div key={sectionId}>
-            <FloralSectionReveal index={index}>
-              <Suspense fallback={sectionId === 'hero' ? null : <SectionLoader />}>
-                {renderSection(sectionId)}
-              </Suspense>
-            </FloralSectionReveal>
-          </div>
+        {visibleSections.map((sectionId) => (
+          <Suspense key={sectionId} fallback={sectionId === 'hero' ? null : <SectionLoader />}>
+            {renderSection(sectionId)}
+          </Suspense>
         ))}
       </main>
       <Suspense fallback={null}>

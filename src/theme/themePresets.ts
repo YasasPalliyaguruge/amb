@@ -50,7 +50,6 @@ export const themePresets: ThemePreset[] = [
   preset('silver-screen', 'Silver Screen', 'Noir', 'Monochrome cinema with muted platinum contrast.', '#1a1d22', '#d4d2ce', '#7f899b', '#f5f3ee', { surfaceMode: 'ink', contrastMode: 'high', motionDensity: 0.82 }),
   preset('midnight-plum', 'Midnight Plum', 'Noir', 'Deep plum and moonlit silver with a gallery hush.', '#191420', '#9260b8', '#d4a67f', '#f4eef8', { surfaceMode: 'ink', contrastMode: 'high' }),
   preset('ink-gallery', 'Ink Gallery', 'Noir', 'A charcoal-and-ivory gallery with soft cyan lift.', '#14181c', '#77a0c9', '#dbc7ab', '#eef2f4', { surfaceMode: 'ink', contrastMode: 'high', grainIntensity: 0.28 }),
-  preset('night-bloom', 'Night Bloom', 'Noir', 'Deep botanical ink, ivory type, and copper-petal light.', '#070908', '#d6a36d', '#82a979', '#f6efe4', { surfaceMode: 'ink', contrastMode: 'high', shadowDepth: 1.02, grainIntensity: 0.36, motionDensity: 0.96 }),
 
   preset('blush-cinema', 'Blush Cinema', 'Pastel', 'Blush paper and apricot highlights with soft drama.', '#f7e8e6', '#ce7b6d', '#9fbecc', '#33252a'),
   preset('powder-bloom', 'Powder Bloom', 'Pastel', 'Powder blue, blush rose, and quiet studio light.', '#eef1f8', '#9f7bb0', '#d58f8a', '#2a2431'),
