@@ -1631,10 +1631,7 @@
     inset: 0;
     z-index: 120;
     overflow: hidden;
-    background:
-      radial-gradient(circle at 66% 44%, rgb(142 190 154 / 0.34), transparent 38%),
-      radial-gradient(circle at 28% 24%, rgb(255 248 238 / 0.52), transparent 34%),
-      linear-gradient(135deg, rgb(226 239 233 / 1), rgb(173 209 174 / 1));
+    background: transparent;
     opacity: 1;
     transition: opacity 620ms ease, visibility 620ms ease;
   }
@@ -1651,22 +1648,17 @@
     position: absolute;
     inset: 0;
     z-index: 1;
+    display: none;
     pointer-events: none;
   }
 
   .public-spline-preloader::before {
-    background:
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.2) 0%, rgb(var(--theme-bg-rgb) / 0.06) 28%, transparent 58%),
-      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.16) 0%, transparent 20%, transparent 72%, rgb(51 78 57 / 0.12) 100%);
+    background: transparent;
   }
 
   .public-spline-preloader::after {
-    background-image:
-      linear-gradient(90deg, rgb(var(--theme-text-rgb) / 0.025) 1px, transparent 1px),
-      linear-gradient(180deg, rgb(var(--theme-text-rgb) / 0.018) 1px, transparent 1px);
-    background-size: 4px 4px;
-    mix-blend-mode: multiply;
-    opacity: 0.45;
+    background: transparent;
+    opacity: 0;
   }
 
   .public-spline-preloader__scene {
@@ -1700,11 +1692,7 @@
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    background:
-      radial-gradient(circle at 68% 22%, rgb(177 220 230 / 0.34), transparent 38%),
-      radial-gradient(circle at 24% 22%, rgb(239 231 224 / 0.36), transparent 34%),
-      radial-gradient(circle at 82% 78%, rgb(132 184 200 / 0.2), transparent 42%),
-      linear-gradient(135deg, rgb(var(--theme-bg-rgb) / 1), rgb(var(--theme-surface-rgb) / 0.92));
+    background: transparent;
   }
 
   .public-spline-background__scene {
@@ -1733,16 +1721,15 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 52% 43%, rgb(var(--theme-bg-rgb) / 0), rgb(var(--theme-bg-rgb) / 0.18) 62%, rgb(var(--theme-bg-rgb) / 0.46) 100%),
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.58) 0%, rgb(var(--theme-bg-rgb) / 0.18) 46%, rgb(var(--theme-bg-rgb) / 0.4) 100%),
-      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.36) 0%, rgb(var(--theme-bg-rgb) / 0.06) 48%, rgb(var(--theme-bg-rgb) / 0.52) 100%);
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.5) 0%, rgb(var(--theme-bg-rgb) / 0.14) 46%, rgb(var(--theme-bg-rgb) / 0.32) 100%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.24) 0%, rgb(var(--theme-bg-rgb) / 0.04) 48%, rgb(var(--theme-bg-rgb) / 0.34) 100%);
     backdrop-filter: blur(0.5px);
   }
 
   .public-spline-background--hero .public-spline-background__veil {
     background:
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.62) 0%, rgb(var(--theme-bg-rgb) / 0.32) 27%, rgb(var(--theme-bg-rgb) / 0.06) 44%, transparent 62%),
-      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.08) 0%, transparent 28%, transparent 100%);
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.62) 0%, rgb(var(--theme-bg-rgb) / 0.34) 28%, rgb(var(--theme-bg-rgb) / 0.08) 45%, transparent 64%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.08) 0%, transparent 32%, transparent 100%);
   }
 
   .hero-cardless {
@@ -1759,9 +1746,8 @@
     inset: 0;
     pointer-events: none;
     background:
-      linear-gradient(180deg, transparent 0%, transparent 72%, rgb(203 228 237 / 0.08) 84%, transparent 100%),
-      radial-gradient(ellipse at 76% 60%, transparent 0 18rem, rgb(var(--theme-bg-rgb) / 0.02) 43rem),
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.78) 0%, rgb(var(--theme-bg-rgb) / 0.44) 27%, rgb(var(--theme-bg-rgb) / 0.06) 43%, transparent 60%);
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.06) 0%, transparent 42%, rgb(var(--theme-bg-rgb) / 0.08) 100%),
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.78) 0%, rgb(var(--theme-bg-rgb) / 0.42) 28%, rgb(var(--theme-bg-rgb) / 0.08) 45%, transparent 64%);
     -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 48%, rgb(0 0 0 / 0.36) 63%, transparent 82%, transparent 100%);
     mask-image: linear-gradient(180deg, #000 0%, #000 48%, rgb(0 0 0 / 0.36) 63%, transparent 82%, transparent 100%);
   }
