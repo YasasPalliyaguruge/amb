@@ -1616,7 +1616,7 @@
     width: clamp(16rem, 25vw, 29rem);
     height: auto;
     filter: saturate(0.86) drop-shadow(0 28px 44px rgb(49 76 82 / 0.18));
-    opacity: 0.42;
+    opacity: 1;
     overflow: visible;
     transform: translate(-50%, -50%) rotate(-5deg);
     transform-origin: 50% 72%;
@@ -1633,18 +1633,27 @@
     stroke: rgb(89 139 104 / 0.44);
     stroke-linecap: round;
     stroke-width: 3.2;
+    opacity: 0.62;
   }
 
   .spline-scene__fallback-leaf {
     fill: rgb(115 158 121 / 0.22);
     stroke: rgb(84 135 98 / 0.24);
     stroke-width: 1.2;
+    opacity: 0.62;
   }
 
   .spline-scene__fallback-flower {
     animation: fallback-flower-float 7.4s ease-in-out infinite;
     transform-box: fill-box;
     transform-origin: center;
+    opacity: 0.62;
+  }
+
+  .public-spline-background--hero .spline-scene__fallback-stem,
+  .public-spline-background--hero .spline-scene__fallback-leaf,
+  .public-spline-background--hero .spline-scene__fallback-flower {
+    opacity: 1;
   }
 
   .spline-scene__fallback-flower--late {
@@ -1667,6 +1676,7 @@
     animation: bee-fallback-drift 4.8s ease-in-out infinite;
     transform-box: fill-box;
     transform-origin: center;
+    opacity: 1;
   }
 
   .spline-scene__fallback-bee-wing {
@@ -1725,8 +1735,7 @@
   @media (prefers-reduced-motion: reduce) {
     .spline-scene__fallback-botanical,
     .spline-scene__fallback-flower,
-    .spline-scene__fallback-bee,
-    .bee-cursor__wing {
+    .spline-scene__fallback-bee {
       animation: none;
     }
   }
@@ -1759,9 +1768,9 @@
     width: auto;
     height: auto;
     min-height: 100svh;
-    opacity: 0.34;
-    filter: saturate(0.72) contrast(0.88) brightness(1.02);
-    mix-blend-mode: multiply;
+    opacity: 1;
+    filter: saturate(0.78) contrast(0.9) brightness(0.96);
+    mix-blend-mode: normal;
     transform: scale(1.1);
     transform-origin: center;
     transition: opacity 420ms ease, filter 420ms ease, transform 420ms ease;
@@ -1778,9 +1787,9 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 50% 42%, rgb(var(--theme-bg-rgb) / 0.1), rgb(var(--theme-bg-rgb) / 0.5) 62%, rgb(var(--theme-bg-rgb) / 0.82) 100%),
-      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.84) 0%, rgb(var(--theme-bg-rgb) / 0.46) 46%, rgb(var(--theme-bg-rgb) / 0.72) 100%),
-      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.68) 0%, rgb(var(--theme-bg-rgb) / 0.2) 48%, rgb(var(--theme-bg-rgb) / 0.86) 100%);
+      radial-gradient(circle at 50% 42%, rgb(var(--theme-bg-rgb) / 0.06), rgb(var(--theme-bg-rgb) / 0.38) 62%, rgb(var(--theme-bg-rgb) / 0.72) 100%),
+      linear-gradient(90deg, rgb(var(--theme-bg-rgb) / 0.76) 0%, rgb(var(--theme-bg-rgb) / 0.34) 46%, rgb(var(--theme-bg-rgb) / 0.62) 100%),
+      linear-gradient(180deg, rgb(var(--theme-bg-rgb) / 0.58) 0%, rgb(var(--theme-bg-rgb) / 0.16) 48%, rgb(var(--theme-bg-rgb) / 0.76) 100%);
     backdrop-filter: blur(0.5px);
     transition: background 420ms ease;
   }
@@ -1825,69 +1834,6 @@
     align-content: center;
     gap: 1.75rem;
     width: min(100%, 38rem);
-  }
-
-  .bee-cursor {
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 2147483000;
-    width: clamp(2rem, 3.2vw, 3.2rem);
-    height: clamp(1.65rem, 2.8vw, 2.7rem);
-    pointer-events: none;
-    opacity: 0;
-    filter: drop-shadow(0 12px 18px rgb(var(--theme-ink-rgb) / 0.22));
-    transition: opacity 180ms ease;
-    will-change: transform;
-  }
-
-  .bee-cursor--visible {
-    opacity: 0.95;
-  }
-
-  .bee-cursor svg {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-
-  .bee-cursor__wing {
-    fill: rgb(255 255 255 / 0.68);
-    stroke: rgb(var(--theme-accent-rgb) / 0.5);
-    stroke-width: 1.2;
-    transform-origin: center;
-    animation: bee-wing 160ms ease-in-out infinite alternate;
-  }
-
-  .bee-cursor__wing--right {
-    animation-delay: 60ms;
-  }
-
-  .bee-cursor__body {
-    fill: rgb(232 181 51 / 0.96);
-    stroke: rgb(var(--theme-ink-rgb) / 0.44);
-    stroke-width: 1.1;
-  }
-
-  .bee-cursor__stripe,
-  .bee-cursor__antenna {
-    fill: none;
-    stroke: rgb(var(--theme-ink-rgb) / 0.78);
-    stroke-width: 2.4;
-    stroke-linecap: round;
-  }
-
-  .bee-cursor__head {
-    fill: rgb(var(--theme-ink-rgb) / 0.88);
-  }
-
-  @keyframes bee-wing {
-    from {
-      transform: rotate(-7deg) scaleY(0.96);
-    }
-    to {
-      transform: rotate(8deg) scaleY(1.06);
-    }
   }
 
   .hero-supporting-frame img {
@@ -3307,7 +3253,6 @@
       left: 66%;
       top: 48%;
       width: 15.5rem;
-      opacity: 0.74;
     }
 
     .section-shell {
