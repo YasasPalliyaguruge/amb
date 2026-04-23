@@ -5,11 +5,12 @@ const PUBLIC_LOADING_SPLINE_SCENE = 'https://prod.spline.design/fi4kVao3vk5K2oVj
 const LOADING_SPLINE_BACKDROP_ID = '6083c9f1-1e5b-4f8d-bb61-89e24484a04d';
 
 type PublicSplinePreloaderProps = {
-  isExiting: boolean;
+  isLeaving: boolean;
+  isSceneHidden: boolean;
   onSceneReady?: () => void;
 };
 
-export default function PublicSplinePreloader({ isExiting, onSceneReady }: PublicSplinePreloaderProps) {
+export default function PublicSplinePreloader({ isLeaving, isSceneHidden, onSceneReady }: PublicSplinePreloaderProps) {
   const handleSceneReady = (app: Application) => {
     const backdrop = app.findObjectById(LOADING_SPLINE_BACKDROP_ID) ?? app.findObjectByName('Rectangle 2');
 
@@ -23,7 +24,7 @@ export default function PublicSplinePreloader({ isExiting, onSceneReady }: Publi
 
   return (
     <div
-      className={`public-spline-preloader ${isExiting ? 'public-spline-preloader--leaving' : ''}`}
+      className={`public-spline-preloader ${isSceneHidden ? 'public-spline-preloader--scene-hidden' : ''} ${isLeaving ? 'public-spline-preloader--leaving' : ''}`}
       role="status"
       aria-label="Loading website"
     >

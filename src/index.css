@@ -1608,14 +1608,22 @@
 
   .public-site__content {
     opacity: 1;
-    transition: opacity 560ms ease;
+    transition: opacity 720ms ease;
   }
 
-  .public-site--loading .public-site__content {
+  .public-site--loading .public-site__content,
+  .public-site--loader-exiting .public-site__content {
     opacity: 0;
     pointer-events: none;
     user-select: none;
     visibility: hidden;
+  }
+
+  .public-site--site-entering .public-site__content {
+    opacity: 1;
+    pointer-events: none;
+    user-select: none;
+    visibility: visible;
   }
 
   .public-site main,
@@ -1629,9 +1637,10 @@
     inset: 0;
     z-index: 120;
     overflow: hidden;
-    background: transparent;
+    background: rgb(var(--theme-bg-rgb) / 1);
     opacity: 1;
-    transition: opacity 620ms ease, visibility 620ms ease;
+    visibility: visible;
+    transition: opacity 720ms ease, visibility 0s linear 720ms;
   }
 
   .public-spline-preloader--leaving {
@@ -1671,10 +1680,17 @@
     opacity: 1;
     transform: scale(1.02);
     transform-origin: center;
+    transition: opacity 300ms ease, filter 300ms ease, transform 300ms ease;
   }
 
   .public-spline-preloader__scene .spline-scene__canvas {
     opacity: 1;
+  }
+
+  .public-spline-preloader.public-spline-preloader--scene-hidden .public-spline-preloader__scene {
+    opacity: 0;
+    filter: saturate(0.98) contrast(0.98) brightness(1);
+    transform: scale(1.015);
   }
 
   .public-spline-preloader :is(a[href*="spline.design"], a[href*="splinetool.com"], [class*="watermark"], [class*="Watermark"]) {
@@ -1691,6 +1707,12 @@
     pointer-events: none;
     overflow: hidden;
     background: transparent;
+    opacity: 0;
+    transition: opacity 720ms ease;
+  }
+
+  .public-spline-background--visible {
+    opacity: 1;
   }
 
   .public-spline-background__scene {

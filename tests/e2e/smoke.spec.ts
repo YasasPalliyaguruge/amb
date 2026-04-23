@@ -1,7 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+test.setTimeout(90_000);
+
 const waitForPublicSite = async (page: Page) => {
-  await expect(page.locator('.public-site__content')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.public-site')).toHaveClass(/public-site--ready/, { timeout: 60_000 });
+  await expect(page.locator('.public-site__content')).toBeVisible();
 };
 
 test('homepage renders key hero content', async ({ page }) => {
@@ -29,7 +33,7 @@ test('book navigation reaches the consultation desk section', async ({ page }) =
 
   await expect
     .poll(async () => page.locator('#consultation-desk').evaluate((element) => Math.round(element.getBoundingClientRect().top)), {
-      timeout: 4000,
+      timeout: 12_000,
     })
     .toBeLessThan(140);
 

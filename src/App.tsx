@@ -134,6 +134,11 @@ function ScrollToHash() {
   return null;
 }
 
+type PublicStartupPhase = 'loading' | 'loader-exiting' | 'site-entering' | 'ready';
+
+const LOADER_SCENE_EXIT_MS = 320;
+const SITE_HANDOFF_MS = 720;
+
 function MainPortfolio() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSplineBackgroundReady, setIsSplineBackgroundReady] = useState(false);
@@ -142,15 +147,21 @@ function MainPortfolio() {
   const [arePublicAssetsReady, setArePublicAssetsReady] = useState(false);
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
   const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
-  const [shouldRenderPreloader, setShouldRenderPreloader] = useState(true);
+  const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
   const { siteSettings } = useSiteSettings();
 
-  const isPublicExperienceReady =
+  const isPublicExperiencePrepared =
     arePublicSectionsReady &&
     arePublicAssetsReady &&
     hasMinimumLoaderTimeElapsed &&
     (isPreloaderSplineReady || hasLoaderSafetyElapsed) &&
-    (isSplineBackgroundReady || hasLoaderSafetyElapsed);
+    isSplineBackgroundReady;
+
+  const isPublicExperienceReady = startupPhase === 'ready';
+  const isPublicExperienceVisible = startupPhase === 'site-entering' || startupPhase === 'ready';
+  const shouldRenderPreloader = startupPhase !== 'ready';
+  const shouldHidePreloaderScene = startupPhase === 'loader-exiting' || startupPhase === 'site-entering';
+  const shouldFadePreloaderLayer = startupPhase === 'site-entering';
 
   useEffect(() => {
     let isMounted = true;
@@ -193,7 +204,7 @@ function MainPortfolio() {
 
   useEffect(() => {
     const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 3200);
-    // Avoid a permanent blank page if an external Spline request stalls.
+    // Avoid blocking on the decorative loader scene if its external request stalls.
     const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), 8500);
 
     return () => {
@@ -203,22 +214,38 @@ function MainPortfolio() {
   }, []);
 
   useEffect(() => {
-    document.body.classList.toggle('public-site-loading', !isPublicExperienceReady);
+    document.body.classList.toggle('public-site-loading', startupPhase !== 'ready');
 
     return () => {
       document.body.classList.remove('public-site-loading');
     };
-  }, [isPublicExperienceReady]);
+  }, [startupPhase]);
 
   useEffect(() => {
-    if (!isPublicExperienceReady) {
-      setShouldRenderPreloader(true);
+    if (!isPublicExperiencePrepared || startupPhase !== 'loading') {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => setShouldRenderPreloader(false), 650);
+    setStartupPhase('loader-exiting');
+  }, [isPublicExperiencePrepared, startupPhase]);
+
+  useEffect(() => {
+    if (startupPhase !== 'loader-exiting') {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setStartupPhase('site-entering'), LOADER_SCENE_EXIT_MS);
     return () => window.clearTimeout(timeoutId);
-  }, [isPublicExperienceReady]);
+  }, [startupPhase]);
+
+  useEffect(() => {
+    if (startupPhase !== 'site-entering') {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setStartupPhase('ready'), SITE_HANDOFF_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [startupPhase]);
 
   const visibleSections = siteSettings.homepage.sectionOrder.filter(
     (sectionId) => siteSettings.homepage.visibility[sectionId]
@@ -246,11 +273,15 @@ function MainPortfolio() {
   };
 
   return (
-    <div className={`public-site relative ${isPublicExperienceReady ? 'public-site--ready' : 'public-site--loading'}`}>
-      <SplineBackground onSceneReady={() => setIsSplineBackgroundReady(true)} />
+    <div className={`public-site relative public-site--${startupPhase}`}>
+      <SplineBackground
+        isVisible={isPublicExperienceVisible}
+        onSceneReady={() => setIsSplineBackgroundReady(true)}
+      />
       {shouldRenderPreloader && (
         <PublicSplinePreloader
-          isExiting={isPublicExperienceReady}
+          isLeaving={shouldFadePreloaderLayer}
+          isSceneHidden={shouldHidePreloaderScene}
           onSceneReady={() => setIsPreloaderSplineReady(true)}
         />
       )}

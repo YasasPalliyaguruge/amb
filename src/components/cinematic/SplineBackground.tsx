@@ -4,10 +4,11 @@ import SplineScene from './SplineScene';
 const CLEAN_SPLINE_BACKGROUND_SCENE = 'https://prod.spline.design/mk2OfkXd-CKewFlt/scene.splinecode';
 
 type SplineBackgroundProps = {
+  isVisible?: boolean;
   onSceneReady?: () => void;
 };
 
-export default function SplineBackground({ onSceneReady }: SplineBackgroundProps) {
+export default function SplineBackground({ isVisible = true, onSceneReady }: SplineBackgroundProps) {
   const [isHeroActive, setIsHeroActive] = useState(true);
   const hasReportedReady = useRef(false);
 
@@ -28,7 +29,10 @@ export default function SplineBackground({ onSceneReady }: SplineBackgroundProps
   }, []);
 
   return (
-    <div className={`public-spline-background ${isHeroActive ? 'public-spline-background--hero' : ''}`} aria-hidden="true">
+    <div
+      className={`public-spline-background ${isVisible ? 'public-spline-background--visible' : ''} ${isHeroActive ? 'public-spline-background--hero' : ''}`}
+      aria-hidden="true"
+    >
       <SplineScene
         scene={CLEAN_SPLINE_BACKGROUND_SCENE}
         className="public-spline-background__scene"
