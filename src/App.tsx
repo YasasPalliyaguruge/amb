@@ -134,6 +134,21 @@ function ScrollToHash() {
   return null;
 }
 
+function dismissInitialBootLoader() {
+  const bootLoader = document.getElementById('initial-boot-loader');
+
+  if (!bootLoader || bootLoader.dataset.dismissed === 'true') {
+    return;
+  }
+
+  bootLoader.dataset.dismissed = 'true';
+  document.documentElement.classList.add('app-boot-loader-dismissed');
+
+  window.setTimeout(() => {
+    bootLoader.remove();
+  }, 650);
+}
+
 type PublicStartupPhase = 'loading' | 'loader-exiting' | 'site-entering' | 'ready';
 
 const LOADER_SCENE_EXIT_MS = 320;
@@ -147,6 +162,7 @@ function MainPortfolio() {
   const [arePublicAssetsReady, setArePublicAssetsReady] = useState(false);
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
   const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
+  const [hasMainSplineSafetyElapsed, setHasMainSplineSafetyElapsed] = useState(false);
   const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
   const { siteSettings } = useSiteSettings();
 
@@ -155,7 +171,7 @@ function MainPortfolio() {
     arePublicAssetsReady &&
     hasMinimumLoaderTimeElapsed &&
     (isPreloaderSplineReady || hasLoaderSafetyElapsed) &&
-    isSplineBackgroundReady;
+    (isSplineBackgroundReady || hasMainSplineSafetyElapsed);
 
   const isPublicExperienceReady = startupPhase === 'ready';
   const isPublicExperienceVisible = startupPhase === 'site-entering' || startupPhase === 'ready';
@@ -206,10 +222,13 @@ function MainPortfolio() {
     const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 3200);
     // Avoid blocking on the decorative loader scene if its external request stalls.
     const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), 8500);
+    // Keep the site recoverable if the external background scene is delayed by the network.
+    const mainSplineSafetyTimer = window.setTimeout(() => setHasMainSplineSafetyElapsed(true), 16000);
 
     return () => {
       window.clearTimeout(minimumTimer);
       window.clearTimeout(safetyTimer);
+      window.clearTimeout(mainSplineSafetyTimer);
     };
   }, []);
 
@@ -220,6 +239,14 @@ function MainPortfolio() {
       document.body.classList.remove('public-site-loading');
     };
   }, [startupPhase]);
+
+  useEffect(() => {
+    if (!isPreloaderSplineReady && startupPhase === 'loading') {
+      return;
+    }
+
+    dismissInitialBootLoader();
+  }, [isPreloaderSplineReady, startupPhase]);
 
   useEffect(() => {
     if (!isPublicExperiencePrepared || startupPhase !== 'loading') {
@@ -341,10 +368,19 @@ function AdminRoute() {
 
 function AppShell() {
   const { siteSettings } = useSiteSettings();
+  const location = useLocation();
 
   useEffect(() => {
     document.title = siteSettings.branding.siteTitle;
   }, [siteSettings.branding.siteTitle]);
+
+  useEffect(() => {
+    if (location.pathname === '/') {
+      return;
+    }
+
+    dismissInitialBootLoader();
+  }, [location.pathname]);
 
   return (
     <>

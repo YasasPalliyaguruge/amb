@@ -1,7 +1,8 @@
 import { lazy, Suspense, useState } from 'react';
 import type { Application } from '@splinetool/runtime';
 
-const Spline = lazy(() => import('@splinetool/react-spline'));
+const splineComponentPromise = import('@splinetool/react-spline');
+const Spline = lazy(() => splineComponentPromise);
 
 type SplineSceneProps = {
   scene?: string;
