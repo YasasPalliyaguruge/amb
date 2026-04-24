@@ -90,35 +90,35 @@ export default function ClientNotesModal({ isOpen, onClose, clientId, clientName
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-text/20 backdrop-blur-sm">
       <div
         ref={dialogRef}
-        className="bg-white/90 backdrop-blur-xl w-full max-w-lg rounded-[2rem] shadow-xl border border-white/60 overflow-hidden flex flex-col max-h-[80vh]"
+        className="theme-panel flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-[2rem] bg-[rgb(var(--theme-surface-strong-rgb)/0.96)] shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="client-notes-title"
         tabIndex={-1}
       >
-        <div className="p-6 border-b border-brand-secondary/30 flex justify-between items-center bg-white/50">
-          <h2 id="client-notes-title" className="text-xl font-heading font-bold text-brand-text">
+        <div className="flex items-center justify-between border-b border-[rgb(var(--theme-line-rgb)/0.28)] bg-[rgb(var(--theme-surface-rgb)/0.46)] p-6">
+          <h2 id="client-notes-title" className="text-xl font-heading font-bold text-[rgb(var(--theme-text-rgb))]">
             Notes for {clientName}
           </h2>
           <button 
             ref={closeButtonRef}
             onClick={onClose}
-            className="p-2 hover:bg-brand-secondary/20 rounded-full transition-colors"
+            className="rounded-full p-2 transition-colors hover:bg-[rgb(var(--theme-secondary-rgb)/0.16)]"
             aria-label="Close client notes"
           >
-            <X className="w-5 h-5 text-brand-text/60" />
+            <X className="w-5 h-5 text-[rgb(var(--theme-muted-rgb))]" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-brand-bg/30">
+        <div className="flex-1 overflow-y-auto bg-[rgb(var(--theme-bg-rgb)/0.3)] p-6">
           {notes.length === 0 ? (
-            <p className="text-center text-brand-text/50 py-8">No notes yet for this client.</p>
+            <p className="py-8 text-center text-[rgb(var(--theme-muted-rgb))]">No notes yet for this client.</p>
           ) : (
             <div className="space-y-4">
               {notes.map(note => (
-                <div key={note.id} className="bg-white p-4 rounded-xl border border-brand-secondary/30 shadow-sm">
-                  <p className="text-sm text-brand-text whitespace-pre-wrap">{note.text}</p>
-                  <p className="text-xs text-brand-text/40 mt-2 text-right">
+                <div key={note.id} className="rounded-xl border border-[rgb(var(--theme-line-rgb)/0.22)] bg-[rgb(var(--theme-surface-strong-rgb)/0.92)] p-4 shadow-sm">
+                  <p className="whitespace-pre-wrap text-sm text-[rgb(var(--theme-text-rgb))]">{note.text}</p>
+                  <p className="mt-2 text-right text-xs text-[rgb(var(--theme-muted-rgb))]">
                     {note.createdAt?.toDate ? format(note.createdAt.toDate(), 'MMM d, yyyy h:mm a') : 'Just now'}
                   </p>
                 </div>
@@ -127,7 +127,7 @@ export default function ClientNotesModal({ isOpen, onClose, clientId, clientName
           )}
         </div>
 
-        <div className="p-6 border-t border-brand-secondary/30 bg-white/50">
+        <div className="border-t border-[rgb(var(--theme-line-rgb)/0.28)] bg-[rgb(var(--theme-surface-rgb)/0.46)] p-6">
           <form onSubmit={handleAddNote} className="space-y-3">
             <label htmlFor="client-note-text" className="sr-only">
               Private note for {clientName}
@@ -137,7 +137,7 @@ export default function ClientNotesModal({ isOpen, onClose, clientId, clientName
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
               placeholder="Type a private note..."
-              className="w-full p-3 bg-white border border-brand-secondary/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/50 text-sm resize-none h-24"
+              className="h-24 w-full resize-none rounded-xl border border-[rgb(var(--theme-line-rgb)/0.34)] bg-[rgb(var(--theme-surface-strong-rgb)/0.96)] p-3 text-sm text-[rgb(var(--theme-text-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--theme-primary-rgb)/0.5)]"
               required
             />
             <button 

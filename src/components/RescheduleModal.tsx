@@ -134,18 +134,18 @@ export default function RescheduleModal({ isOpen, onClose, appointment, userEmai
             aria-describedby="reschedule-modal-description"
             tabIndex={-1}
           >
-            <div className="bg-white/90 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl border border-white/60 relative max-h-[calc(90vh-3rem)] overflow-y-auto">
+            <div className="theme-panel relative max-h-[calc(90vh-3rem)] overflow-y-auto rounded-[2rem] bg-[rgb(var(--theme-surface-strong-rgb)/0.96)] p-8 shadow-2xl">
               <button 
                 ref={closeButtonRef}
                 onClick={onClose}
-                className="absolute top-5 right-5 p-1.5 rounded-full text-brand-text/40 hover:text-brand-text hover:bg-brand-secondary/30 transition-colors"
+                className="absolute top-5 right-5 rounded-full p-1.5 text-[rgb(var(--theme-text-rgb)/0.42)] transition-colors hover:bg-[rgb(var(--theme-secondary-rgb)/0.18)] hover:text-[rgb(var(--theme-text-rgb))]"
                 aria-label="Close reschedule dialog"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <h3 id="reschedule-modal-title" className="text-2xl font-heading font-bold text-brand-text mb-2">Reschedule Appointment</h3>
-              <p id="reschedule-modal-description" className="text-brand-text/60 mb-8">
+              <h3 id="reschedule-modal-title" className="mb-2 text-2xl font-heading font-bold text-[rgb(var(--theme-text-rgb))]">Reschedule Appointment</h3>
+              <p id="reschedule-modal-description" className="mb-8 text-[rgb(var(--theme-muted-rgb))]">
                 Current: {format(parseStoredDate(appointment.date), 'MMM d, yyyy')} at {formatSlot(appointment.timeSlot)}
               </p>
               
@@ -167,13 +167,13 @@ export default function RescheduleModal({ isOpen, onClose, appointment, userEmai
                 </div>
 
                 <div className="space-y-6">
-                  <h4 className="font-heading font-semibold text-brand-text">
+                  <h4 className="font-heading font-semibold text-[rgb(var(--theme-text-rgb))]">
                     Available Slots for {format(selectedDate, 'MMM d')}
                   </h4>
                   
                   {availabilityNotice ? (
-                    <div className="bg-brand-bg p-6 rounded-2xl text-center">
-                      <p className="text-brand-text/60 font-medium">{availabilityNotice}</p>
+                    <div className="rounded-2xl bg-[rgb(var(--theme-bg-rgb)/0.62)] p-6 text-center">
+                      <p className="font-medium text-[rgb(var(--theme-muted-rgb))]">{availabilityNotice}</p>
                     </div>
                   ) : availableSlots.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
@@ -184,7 +184,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment, userEmai
                           className={`py-2 px-3 rounded-xl font-medium transition-all text-sm ${
                             selectedSlot === slot 
                               ? 'bg-brand-primary text-white shadow-md' 
-                              : 'bg-brand-secondary/20 text-brand-text hover:bg-brand-secondary/40'
+                              : 'bg-[rgb(var(--theme-secondary-rgb)/0.18)] text-[rgb(var(--theme-text-rgb))] hover:bg-[rgb(var(--theme-secondary-rgb)/0.32)]'
                           }`}
                         >
                           {formatSlot(slot)}
@@ -192,12 +192,12 @@ export default function RescheduleModal({ isOpen, onClose, appointment, userEmai
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-brand-bg p-6 rounded-2xl text-center">
-                      <p className="text-brand-text/60 font-medium">No available slots.</p>
+                    <div className="rounded-2xl bg-[rgb(var(--theme-bg-rgb)/0.62)] p-6 text-center">
+                      <p className="font-medium text-[rgb(var(--theme-muted-rgb))]">No available slots.</p>
                     </div>
                   )}
 
-                  <div className="pt-6 border-t border-brand-secondary/30">
+                  <div className="border-t border-[rgb(var(--theme-line-rgb)/0.28)] pt-6">
                     <button 
                       onClick={handleConfirmReschedule}
                       disabled={isSubmitting || !selectedSlot || Boolean(availabilityNotice)}

@@ -210,31 +210,31 @@ export default function PatientDashboard() {
         <div className="patient-overview-grid">
           <section className="patient-next-panel theme-panel-dark">
             <div className="space-y-3">
-              <span className="inline-flex w-fit items-center rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/62">
+              <span className="patient-next-panel__eyebrow inline-flex w-fit items-center rounded-full border px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.2em]">
                 Next Appointment
               </span>
               {nextAppointment ? (
                 <>
                   <div className="space-y-2">
-                    <p className="font-heading text-4xl font-semibold leading-none text-white">
+                    <p className="patient-next-panel__title font-heading text-4xl font-semibold leading-none">
                       {format(parseStoredDate(nextAppointment.date), 'MMM d')}
                     </p>
-                    <p className="text-sm leading-6 text-white/68">
+                    <p className="patient-next-panel__meta text-sm leading-6">
                       {format(parseStoredDate(nextAppointment.date), 'EEEE, MMMM d, yyyy')} at {formatSlot(nextAppointment.timeSlot)}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-white">{nextAppointment.serviceType}</p>
-                  {nextAppointment.notes && <p className="text-sm leading-6 text-white/62">{nextAppointment.notes}</p>}
+                  <p className="patient-next-panel__service text-sm font-semibold">{nextAppointment.serviceType}</p>
+                  {nextAppointment.notes && <p className="patient-next-panel__notes text-sm leading-6">{nextAppointment.notes}</p>}
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setReschedulingAppt(nextAppointment)}
-                      className="rounded-full border border-white/14 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/16"
+                      className="patient-next-panel__action rounded-full border px-4 py-2 text-sm font-semibold transition"
                     >
                       Reschedule
                     </button>
                     <button
                       onClick={() => setCancellingId(nextAppointment.id)}
-                      className="rounded-full border border-rose-200/20 bg-rose-100/10 px-4 py-2 text-sm font-semibold text-rose-50 transition hover:bg-rose-100/16"
+                      className="patient-next-panel__danger rounded-full border px-4 py-2 text-sm font-semibold transition"
                     >
                       Cancel
                     </button>
@@ -242,11 +242,11 @@ export default function PatientDashboard() {
                 </>
               ) : (
                 <>
-                  <p className="font-heading text-3xl font-semibold leading-tight text-white">No upcoming session yet.</p>
-                  <p className="text-sm leading-6 text-white/66">
+                  <p className="patient-next-panel__title font-heading text-3xl font-semibold leading-tight">No upcoming session yet.</p>
+                  <p className="patient-next-panel__meta text-sm leading-6">
                     When you reserve a slot, the next session appears here with quick actions.
                   </p>
-                  <a href="/#consultation-desk" className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-text">
+                  <a href="/#consultation-desk" className="patient-next-panel__ghost inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold">
                     Book a session
                     <CalendarPlus className="h-4 w-4" />
                   </a>
@@ -256,12 +256,12 @@ export default function PatientDashboard() {
 
             <div className="patient-metric-row">
               <div>
-                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-white/42">Upcoming</p>
-                <p className="mt-1 font-heading text-2xl text-white">{upcomingAppointments.length}</p>
+                <p className="patient-next-panel__metric-label text-[0.62rem] font-semibold uppercase tracking-[0.18em]">Upcoming</p>
+                <p className="patient-next-panel__metric-value mt-1 font-heading text-2xl">{upcomingAppointments.length}</p>
               </div>
               <div>
-                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-white/42">History</p>
-                <p className="mt-1 font-heading text-2xl text-white">{pastAppointments.length}</p>
+                <p className="patient-next-panel__metric-label text-[0.62rem] font-semibold uppercase tracking-[0.18em]">History</p>
+                <p className="patient-next-panel__metric-value mt-1 font-heading text-2xl">{pastAppointments.length}</p>
               </div>
             </div>
           </section>

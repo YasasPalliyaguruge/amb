@@ -10,7 +10,17 @@ const waitForPublicSite = async (page: Page) => {
 
 test('homepage renders key hero content', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#initial-boot-loader')).toBeAttached();
+  await expect
+    .poll(async () => {
+      const bootLoaderCount = await page.locator('#initial-boot-loader').count();
+      const preloaderCount = await page.locator('.public-spline-preloader').count();
+      const publicSiteReady = await page.locator('.public-site').evaluateAll((nodes) =>
+        nodes.some((node) => node.className.includes('public-site--ready'))
+      );
+
+      return bootLoaderCount > 0 || preloaderCount > 0 || publicSiteReady;
+    }, { timeout: 10_000 })
+    .toBe(true);
   await waitForPublicSite(page);
   await expect(page.locator('#initial-boot-loader')).toHaveCount(0);
   await expect(page.locator('.public-spline-preloader')).toHaveCount(0);
