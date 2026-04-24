@@ -111,7 +111,7 @@ export default function PatientDashboard() {
           navigate('/');
           return;
         }
-        console.error('Error fetching patient appointments:', snapshotError);
+        console.error('Error fetching client appointments:', snapshotError);
         setAppointments([]);
         setAppointmentsNotice('We could not load your bookings right now. Please refresh and try again.');
       }
@@ -186,7 +186,7 @@ export default function PatientDashboard() {
       <div className="mx-auto grid max-w-7xl gap-6">
         <section className="patient-hero">
           <div className="space-y-4">
-            <span className="theme-chip">Patient Portal</span>
+            <span className="theme-chip">Client Portal</span>
             <div className="space-y-3">
               <h1 className="patient-hero__title">Your bookings and care details, kept simple.</h1>
               <p className="patient-hero__body">
@@ -281,9 +281,9 @@ export default function PatientDashboard() {
               <div className="patient-readonly-field">
                 <UserRound className="h-4 w-4" />
                 <div>
-                  <label htmlFor="patient-name" className="patient-field-label">Name</label>
+                  <label htmlFor="client-name" className="patient-field-label">Name</label>
                   <input
-                    id="patient-name"
+                    id="client-name"
                     type="text"
                     value={user?.displayName || ''}
                     disabled
@@ -295,9 +295,9 @@ export default function PatientDashboard() {
               <div className="patient-readonly-field">
                 <Mail className="h-4 w-4" />
                 <div>
-                  <label htmlFor="patient-email" className="patient-field-label">Email</label>
+                  <label htmlFor="client-email" className="patient-field-label">Email</label>
                   <input
-                    id="patient-email"
+                    id="client-email"
                     type="email"
                     value={user?.email || ''}
                     disabled
@@ -308,11 +308,11 @@ export default function PatientDashboard() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label htmlFor="patient-phone" className="patient-field-label">Phone Number</label>
+                  <label htmlFor="client-phone" className="patient-field-label">Phone Number</label>
                   <div className="relative">
                     <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[rgb(var(--theme-muted-rgb)/0.76)]" />
                     <input
-                      id="patient-phone"
+                      id="client-phone"
                       name="phone"
                       type="tel"
                       value={phone}
@@ -325,9 +325,9 @@ export default function PatientDashboard() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="patient-timezone" className="patient-field-label">Timezone</label>
+                  <label htmlFor="client-timezone" className="patient-field-label">Timezone</label>
                   <select
-                    id="patient-timezone"
+                    id="client-timezone"
                     name="timezone"
                     value={timezone}
                     onChange={(event) => setTimezone(event.target.value)}

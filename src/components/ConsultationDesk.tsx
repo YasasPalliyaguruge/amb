@@ -641,7 +641,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                         {siteSettings.consultationDesk.modalDoneLabel}
                       </button>
                       <Link
-                        to="/patient-dashboard"
+                        to="/client-dashboard"
                         className="inline-flex flex-1 items-center justify-center rounded-full border border-brand-secondary/40 bg-white px-5 py-3 text-sm font-medium text-brand-text transition hover:bg-brand-bg/55"
                       >
                         {siteSettings.consultationDesk.modalViewAppointmentsLabel}

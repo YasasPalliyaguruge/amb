@@ -56,6 +56,6 @@ test('book navigation reaches the consultation desk section', async ({ page }) =
 test('unauthorized dashboard routes redirect to the homepage', async ({ page }) => {
   await page.goto('/admin-dashboard');
   await expect(page).toHaveURL('http://127.0.0.1:3000/');
-  await page.goto('/patient-dashboard');
+  await page.goto('/client-dashboard');
   await expect(page).toHaveURL('http://127.0.0.1:3000/');
 });

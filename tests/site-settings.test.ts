@@ -68,4 +68,84 @@ describe('site settings sanitizer', () => {
       { value: 'Custom Service', label: 'Custom Service', icon: 'CS', desc: 'Valid service.' },
     ]);
   });
+
+  it('upgrades legacy patient wording while preserving custom content', () => {
+    const legacySettings = {
+      ...defaultSiteSettings,
+      schemaVersion: 4,
+      loginModal: {
+        ...defaultSiteSettings.loginModal,
+        portalAgreement: 'By continuing, you agree to confidential use of the patient portal.',
+      },
+      branding: {
+        ...defaultSiteSettings.branding,
+        patientDashboardLabel: 'Patient Dashboard',
+        userFallbackLabel: 'Patient',
+      },
+      hero: {
+        ...defaultSiteSettings.hero,
+        trustCards: [
+          ...defaultSiteSettings.hero.trustCards.slice(0, 2),
+          {
+            ...defaultSiteSettings.hero.trustCards[2],
+            description: 'Review availability, choose a slot, and manage bookings from the patient desk.',
+          },
+        ],
+      },
+      consultationExperience: {
+        ...defaultSiteSettings.consultationExperience,
+        factCards: [
+          defaultSiteSettings.consultationExperience.factCards[0],
+          'Once booked, appointments stay visible in the patient dashboard so future changes do not create extra friction.',
+        ],
+        steps: [
+          ...defaultSiteSettings.consultationExperience.steps.slice(0, 3),
+          {
+            ...defaultSiteSettings.consultationExperience.steps[3],
+            description: 'The patient dashboard lets you review future appointments, reschedule, or cancel when plans shift.',
+          },
+        ],
+      },
+      consultationDesk: {
+        ...defaultSiteSettings.consultationDesk,
+        railDescription:
+          'The desk is designed to stay simple and quiet: secure sign-in, clear choices, and later access through the patient dashboard whenever you need to return.',
+        proofItems: [
+          {
+            ...defaultSiteSettings.consultationDesk.proofItems[0],
+            detail: 'Handled inside the same secure patient system.',
+          },
+          ...defaultSiteSettings.consultationDesk.proofItems.slice(1),
+        ],
+        signInPrompt:
+          'Sign in once to confirm the slot, then manage future changes from your patient dashboard.',
+        modalPatientLabel: 'Patient',
+        modalDashboardFallback: 'You can review this appointment in your patient dashboard.',
+      },
+    } satisfies SiteSettings;
+
+    const sanitized = sanitizeSiteSettings(legacySettings);
+
+    expect(sanitized.loginModal.portalAgreement).toContain('client portal');
+    expect(sanitized.branding.patientDashboardLabel).toBe('Client Dashboard');
+    expect(sanitized.branding.userFallbackLabel).toBe('Client');
+    expect(sanitized.hero.trustCards[2].description).toContain('client dashboard');
+    expect(sanitized.consultationExperience.factCards[1]).toContain('client dashboard');
+    expect(sanitized.consultationExperience.steps[3].description).toContain('client dashboard');
+    expect(sanitized.consultationDesk.railDescription).toContain('client dashboard');
+    expect(sanitized.consultationDesk.proofItems[0].detail).toContain('client system');
+    expect(sanitized.consultationDesk.signInPrompt).toContain('client dashboard');
+    expect(sanitized.consultationDesk.modalPatientLabel).toBe('Client');
+    expect(sanitized.consultationDesk.modalDashboardFallback).toContain('client dashboard');
+
+    const customSettings = {
+      ...legacySettings,
+      branding: {
+        ...legacySettings.branding,
+        patientDashboardLabel: 'Care Dashboard',
+      },
+    } satisfies SiteSettings;
+
+    expect(sanitizeSiteSettings(customSettings).branding.patientDashboardLabel).toBe('Care Dashboard');
+  });
 });

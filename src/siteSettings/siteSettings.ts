@@ -361,6 +361,24 @@ export interface SiteSettings {
 export const siteSettingsDocId = 'site';
 export const siteSettingsSchemaVersion = 5;
 
+const deprecatedPatientCopy = {
+  loginPortalAgreement: 'By continuing, you agree to confidential use of the patient portal.',
+  brandingDashboardLabel: 'Patient Dashboard',
+  brandingUserFallbackLabel: 'Patient',
+  heroBookingTrustDescription: 'Review availability, choose a slot, and manage bookings from the patient desk.',
+  consultationFactCard:
+    'Once booked, appointments stay visible in the patient dashboard so future changes do not create extra friction.',
+  consultationReturnStep:
+    'The patient dashboard lets you review future appointments, reschedule, or cancel when plans shift.',
+  bookingRailDescription:
+    'The desk is designed to stay simple and quiet: secure sign-in, clear choices, and later access through the patient dashboard whenever you need to return.',
+  bookingProofDetail: 'Handled inside the same secure patient system.',
+  bookingSignInPrompt:
+    'Sign in once to confirm the slot, then manage future changes from your patient dashboard.',
+  bookingModalPersonLabel: 'Patient',
+  bookingModalDashboardFallback: 'You can review this appointment in your patient dashboard.',
+} as const;
+
 const defaultStringArray = (items: string[]) => items.map((item) => item.trim()).filter(Boolean);
 const defaultVisibility = homepageSectionIds.reduce(
   (accumulator, sectionId) => ({ ...accumulator, [sectionId]: true }),
@@ -419,7 +437,7 @@ export const defaultSiteSettings: SiteSettings = {
     verifyingLabel: 'Verifying...',
     verifyCtaLabel: 'Verify and Sign In',
     wrongNumberLabel: 'Wrong number? Go back',
-    portalAgreement: 'By continuing, you agree to confidential use of the patient portal.',
+    portalAgreement: 'By continuing, you agree to confidential use of the client portal.',
     phoneRequiredError: 'Please enter a phone number',
     recaptchaError: 'reCAPTCHA not initialized',
     verificationSentToast: 'Verification code sent',
@@ -440,9 +458,9 @@ export const defaultSiteSettings: SiteSettings = {
     signInLabel: 'Sign In',
     signInToContinueLabel: 'Sign In to Continue',
     signOutLabel: 'Sign Out',
-    patientDashboardLabel: 'Patient Dashboard',
+    patientDashboardLabel: 'Client Dashboard',
     adminDashboardLabel: 'Admin Dashboard',
-    userFallbackLabel: 'Patient',
+    userFallbackLabel: 'Client',
     mobileSignInPrompt:
       'Sign in to book, reschedule, and review appointments from your private dashboard.',
     userMenuAriaLabel: 'User menu',
@@ -482,7 +500,7 @@ export const defaultSiteSettings: SiteSettings = {
       },
       {
         title: 'Book online',
-        description: 'Review availability, choose a slot, and manage bookings from the patient desk.',
+        description: 'Review availability, choose a slot, and manage bookings from the client dashboard.',
         icon: 'calendar',
       },
     ],
@@ -668,7 +686,7 @@ export const defaultSiteSettings: SiteSettings = {
       'Less uncertainty, less back-and-forth, and a booking flow that keeps the important details visible from start to finish.',
     factCards: [
       'Published availability keeps the first step simple and avoids the feeling of sending requests into the dark.',
-      'Once booked, appointments stay visible in the patient dashboard so future changes do not create extra friction.',
+      'Once booked, appointments stay visible in the client dashboard so future changes do not create extra friction.',
     ],
     steps: [
       {
@@ -688,7 +706,7 @@ export const defaultSiteSettings: SiteSettings = {
       },
       {
         title: 'Return later if needed',
-        description: 'The patient dashboard lets you review future appointments, reschedule, or cancel when plans shift.',
+        description: 'The client dashboard lets you review future appointments, reschedule, or cancel when plans shift.',
         icon: 'refresh',
       },
     ],
@@ -703,12 +721,12 @@ export const defaultSiteSettings: SiteSettings = {
     railEyebrow: 'Before you confirm',
     railHeadline: 'Date, time, and care type stay visible at every step.',
     railDescription:
-      'The desk is designed to stay simple and quiet: secure sign-in, clear choices, and later access through the patient dashboard whenever you need to return.',
+      'The desk is designed to stay simple and quiet: secure sign-in, clear choices, and later access through the client dashboard whenever you need to return.',
     proofItems: [
       {
         icon: 'shield',
         label: 'Confidential',
-        detail: 'Handled inside the same secure patient system.',
+        detail: 'Handled inside the same secure client system.',
       },
       {
         icon: 'check',
@@ -734,7 +752,7 @@ export const defaultSiteSettings: SiteSettings = {
     slotPluralLabel: 'slots',
     signInRequiredToast: 'Please sign in to book this slot.',
     availabilityLoadError: 'Live availability is temporarily unavailable. Please refresh and try again.',
-    signInPrompt: 'Sign in once to confirm the slot, then manage future changes from your patient dashboard.',
+    signInPrompt: 'Sign in once to confirm the slot, then manage future changes from your client dashboard.',
     signInCtaLabel: 'Open sign-in',
     datePanelTitle: 'Select a Date',
     datePanelDescription: 'Highlighted dates already contain published openings.',
@@ -782,7 +800,7 @@ export const defaultSiteSettings: SiteSettings = {
     modalConfirmDescription: 'Review the session details before you reserve the slot.',
     modalDateLabel: 'Date',
     modalTimeLabel: 'Time',
-    modalPatientLabel: 'Patient',
+    modalPatientLabel: 'Client',
     modalServiceTypeLabel: 'Service Type',
     modalNotesLabel: 'Notes',
     modalNotesOptionalLabel: 'optional',
@@ -795,7 +813,7 @@ export const defaultSiteSettings: SiteSettings = {
     modalDateTimeLabel: 'Date and Time',
     modalServiceLabel: 'Service',
     modalEmailQueuedPrefix: 'A confirmation email will be queued for',
-    modalDashboardFallback: 'You can review this appointment in your patient dashboard.',
+    modalDashboardFallback: 'You can review this appointment in your client dashboard.',
     modalDoneLabel: 'Done',
     modalViewAppointmentsLabel: 'View My Appointments',
     modalCloseAriaLabel: 'Close booking dialog',
@@ -830,6 +848,11 @@ function readTrimmedString(value: unknown, fallback: string) {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
+function readMigratedString(value: unknown, fallback: string, deprecatedFallback?: string) {
+  const resolved = readTrimmedString(value, fallback);
+  return deprecatedFallback && resolved === deprecatedFallback ? fallback : resolved;
+}
+
 function readBoolean(value: unknown, fallback: boolean) {
   return typeof value === 'boolean' ? value : fallback;
 }
@@ -850,6 +873,31 @@ function readStringList(value: unknown, fallback: string[], maxLength: number = 
         value.filter((entry): entry is string => typeof entry === 'string')
       ).slice(0, maxLength)
     : fallback;
+}
+
+function replaceDeprecatedStringList(values: string[], replacements: ReadonlyArray<readonly [string, string]>) {
+  return values.map((value) => {
+    const replacement = replacements.find(([deprecatedValue]) => deprecatedValue === value);
+    return replacement ? replacement[1] : value;
+  });
+}
+
+function replaceDeprecatedTextCards(
+  values: SiteTextCard[],
+  replacements: Partial<Record<'title' | 'description', ReadonlyArray<readonly [string, string]>>>
+) {
+  return values.map((value) => ({
+    ...value,
+    title: replaceDeprecatedStringList([value.title], replacements.title || [])[0],
+    description: replaceDeprecatedStringList([value.description], replacements.description || [])[0],
+  }));
+}
+
+function replaceDeprecatedProofItems(values: SiteBookingProofItem[], replacements: ReadonlyArray<readonly [string, string]>) {
+  return values.map((value) => ({
+    ...value,
+    detail: replaceDeprecatedStringList([value.detail], replacements)[0],
+  }));
 }
 
 const siteIconKeys: SiteIconKey[] = [
@@ -1056,7 +1104,7 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
       ? (data.theme as ThemeState)
       : defaultSiteSettings.theme;
 
-  return {
+  const sanitized: SiteSettings = {
     schemaVersion: siteSettingsSchemaVersion,
     themeStudioEnabled: readBoolean(data.themeStudioEnabled, defaultSiteSettings.themeStudioEnabled),
     theme: sanitizeThemeState(themeCandidate, themePresets),
@@ -1145,9 +1193,10 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
         loginModal.wrongNumberLabel,
         defaultSiteSettings.loginModal.wrongNumberLabel
       ),
-      portalAgreement: readTrimmedString(
+      portalAgreement: readMigratedString(
         loginModal.portalAgreement,
-        defaultSiteSettings.loginModal.portalAgreement
+        defaultSiteSettings.loginModal.portalAgreement,
+        deprecatedPatientCopy.loginPortalAgreement
       ),
       phoneRequiredError: readTrimmedString(
         loginModal.phoneRequiredError,
@@ -1193,15 +1242,20 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
         defaultSiteSettings.branding.signInToContinueLabel
       ),
       signOutLabel: readTrimmedString(branding.signOutLabel, defaultSiteSettings.branding.signOutLabel),
-      patientDashboardLabel: readTrimmedString(
+      patientDashboardLabel: readMigratedString(
         branding.patientDashboardLabel,
-        defaultSiteSettings.branding.patientDashboardLabel
+        defaultSiteSettings.branding.patientDashboardLabel,
+        deprecatedPatientCopy.brandingDashboardLabel
       ),
       adminDashboardLabel: readTrimmedString(
         branding.adminDashboardLabel,
         defaultSiteSettings.branding.adminDashboardLabel
       ),
-      userFallbackLabel: readTrimmedString(branding.userFallbackLabel, defaultSiteSettings.branding.userFallbackLabel),
+      userFallbackLabel: readMigratedString(
+        branding.userFallbackLabel,
+        defaultSiteSettings.branding.userFallbackLabel,
+        deprecatedPatientCopy.brandingUserFallbackLabel
+      ),
       mobileSignInPrompt: readTrimmedString(
         branding.mobileSignInPrompt,
         defaultSiteSettings.branding.mobileSignInPrompt
@@ -1493,7 +1547,11 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
         consultationDesk.availabilityLoadError,
         defaultSiteSettings.consultationDesk.availabilityLoadError
       ),
-      signInPrompt: readTrimmedString(consultationDesk.signInPrompt, defaultSiteSettings.consultationDesk.signInPrompt),
+      signInPrompt: readMigratedString(
+        consultationDesk.signInPrompt,
+        defaultSiteSettings.consultationDesk.signInPrompt,
+        deprecatedPatientCopy.bookingSignInPrompt
+      ),
       signInCtaLabel: readTrimmedString(
         consultationDesk.signInCtaLabel,
         defaultSiteSettings.consultationDesk.signInCtaLabel
@@ -1577,9 +1635,10 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
         consultationDesk.modalTimeLabel,
         defaultSiteSettings.consultationDesk.modalTimeLabel
       ),
-      modalPatientLabel: readTrimmedString(
+      modalPatientLabel: readMigratedString(
         consultationDesk.modalPatientLabel,
-        defaultSiteSettings.consultationDesk.modalPatientLabel
+        defaultSiteSettings.consultationDesk.modalPatientLabel,
+        deprecatedPatientCopy.bookingModalPersonLabel
       ),
       modalServiceTypeLabel: readTrimmedString(
         consultationDesk.modalServiceTypeLabel,
@@ -1629,9 +1688,10 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
         consultationDesk.modalEmailQueuedPrefix,
         defaultSiteSettings.consultationDesk.modalEmailQueuedPrefix
       ),
-      modalDashboardFallback: readTrimmedString(
+      modalDashboardFallback: readMigratedString(
         consultationDesk.modalDashboardFallback,
-        defaultSiteSettings.consultationDesk.modalDashboardFallback
+        defaultSiteSettings.consultationDesk.modalDashboardFallback,
+        deprecatedPatientCopy.bookingModalDashboardFallback
       ),
       modalDoneLabel: readTrimmedString(
         consultationDesk.modalDoneLabel,
@@ -1672,4 +1732,33 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
       visitColumnTitle: readTrimmedString(footer.visitColumnTitle, defaultSiteSettings.footer.visitColumnTitle),
     },
   };
+
+  sanitized.hero.trustCards = replaceDeprecatedTextCards(sanitized.hero.trustCards, {
+    description: [
+      [
+        deprecatedPatientCopy.heroBookingTrustDescription,
+        defaultSiteSettings.hero.trustCards[2]?.description || sanitized.hero.trustCards[2]?.description || '',
+      ],
+    ],
+  });
+
+  sanitized.consultationExperience.factCards = replaceDeprecatedStringList(
+    sanitized.consultationExperience.factCards,
+    [[deprecatedPatientCopy.consultationFactCard, defaultSiteSettings.consultationExperience.factCards[1] || '']]
+  );
+
+  sanitized.consultationExperience.steps = replaceDeprecatedTextCards(sanitized.consultationExperience.steps, {
+    description: [[deprecatedPatientCopy.consultationReturnStep, defaultSiteSettings.consultationExperience.steps[3]?.description || '']],
+  });
+
+  sanitized.consultationDesk.railDescription = readMigratedString(
+    consultationDesk.railDescription,
+    defaultSiteSettings.consultationDesk.railDescription,
+    deprecatedPatientCopy.bookingRailDescription
+  );
+  sanitized.consultationDesk.proofItems = replaceDeprecatedProofItems(sanitized.consultationDesk.proofItems, [
+    [deprecatedPatientCopy.bookingProofDetail, defaultSiteSettings.consultationDesk.proofItems[0]?.detail || ''],
+  ]);
+
+  return sanitized;
 }

@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (!userSnap.exists()) {
                 const isDefaultAdmin = isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified);
                 await firestore.setDoc(userRef, {
-                  name: currentUser.displayName || 'Patient',
+                  name: currentUser.displayName || 'Client',
                   email: currentUser.email || '',
                   ...(currentUser.phoneNumber ? { phone: currentUser.phoneNumber } : {}),
                   role: isDefaultAdmin ? 'admin' : 'client',

@@ -446,7 +446,8 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<MainPortfolio />} />
           <Route path="/admin-dashboard" element={<AdminRoute />} />
-          <Route path="/patient-dashboard" element={<PatientRoute />} />
+          <Route path="/client-dashboard" element={<PatientRoute />} />
+          <Route path="/patient-dashboard" element={<Navigate to="/client-dashboard" replace />} />
         </Routes>
       </Suspense>
 

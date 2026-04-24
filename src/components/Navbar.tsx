@@ -195,7 +195,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                         <p className="truncate text-xs text-[rgb(var(--theme-muted-rgb))]">{user.email}</p>
                       </div>
                       <Link
-                        to="/patient-dashboard"
+                        to="/client-dashboard"
                         onClick={handleNavLinkClick}
                         className="block px-5 py-3 text-sm font-medium text-[rgb(var(--theme-text-rgb)/0.84)] transition hover:bg-[rgb(var(--theme-primary-rgb)/0.08)] hover:text-[rgb(var(--theme-primary-rgb))]"
                       >
@@ -308,7 +308,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                       <p className="truncate text-xs text-[rgb(var(--theme-muted-rgb))]">{user.email}</p>
                     </div>
                     <Link
-                      to="/patient-dashboard"
+                      to="/client-dashboard"
                       onClick={handleNavLinkClick}
                       className="theme-button-secondary w-full"
                     >
