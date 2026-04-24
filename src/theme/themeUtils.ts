@@ -132,6 +132,16 @@ function mutedBlend(text: string, background: string, contrastMode: ContrastMode
   return mix(text, background, 0.42);
 }
 
+function inkMutedBlend(text: string, background: string, contrastMode: ContrastMode) {
+  if (contrastMode === 'soft') {
+    return mix(text, background, 0.32);
+  }
+  if (contrastMode === 'high') {
+    return mix(text, background, 0.2);
+  }
+  return mix(text, background, 0.26);
+}
+
 export function createThemeState(preset: ThemePreset): ThemeState {
   return {
     presetId: preset.id,
@@ -175,6 +185,9 @@ export function resolveTheme(theme: ThemeState): ResolvedTheme {
   const { surface, strong, ink } = surfaceBlend(background, primary, accent, text, theme.controls.surfaceMode);
   const line = lineBlend(strong, text, theme.controls.contrastMode);
   const muted = mutedBlend(text, background, theme.controls.contrastMode);
+  const inkText = ensureReadableText(ink, '#F8F6F1');
+  const inkLine = lineBlend(ink, inkText, theme.controls.contrastMode);
+  const inkMuted = inkMutedBlend(inkText, ink, theme.controls.contrastMode);
   const radiusBase = 10 * theme.controls.radiusScale;
   const blur = theme.controls.surfaceMode === 'glass' ? 22 : theme.controls.surfaceMode === 'ink' ? 12 : 18;
   const shadowStrength = 0.08 + theme.controls.shadowDepth * 0.16;
@@ -199,6 +212,9 @@ export function resolveTheme(theme: ThemeState): ResolvedTheme {
       '--theme-surface-rgb': rgbString(surface),
       '--theme-surface-strong-rgb': rgbString(strong),
       '--theme-ink-rgb': rgbString(ink),
+      '--theme-ink-text-rgb': rgbString(inkText),
+      '--theme-ink-line-rgb': rgbString(inkLine),
+      '--theme-ink-muted-rgb': rgbString(inkMuted),
       '--theme-line-rgb': rgbString(line),
       '--theme-muted-rgb': rgbString(muted),
       '--theme-radius-md': `${radiusBase}px`,

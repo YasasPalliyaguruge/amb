@@ -181,10 +181,10 @@
   }
 
   .theme-panel-dark {
-    border: 1px solid rgb(var(--theme-line-rgb) / 0.16);
+    border: 1px solid rgb(var(--theme-ink-line-rgb) / 0.28);
     background:
       linear-gradient(180deg, rgb(var(--theme-ink-rgb) / 0.94), rgb(var(--theme-ink-rgb) / 0.86));
-    color: rgb(255 255 255 / 0.92);
+    color: rgb(var(--theme-ink-text-rgb) / 0.96);
     border-radius: var(--theme-radius-lg);
     box-shadow: 0 28px 72px rgb(var(--theme-text-rgb) / calc(var(--theme-shadow-alpha) * 0.72));
   }
@@ -2355,6 +2355,63 @@
 
   .booking-rail {
     box-shadow: 0 22px 64px rgb(var(--theme-text-rgb) / 0.13);
+  }
+
+  .booking-rail__eyebrow,
+  .booking-rail__badge,
+  .booking-service-card__badge {
+    border-color: rgb(var(--theme-ink-line-rgb) / 0.34) !important;
+    background: rgb(var(--theme-ink-text-rgb) / 0.08) !important;
+    color: rgb(var(--theme-ink-muted-rgb) / 1) !important;
+  }
+
+  .booking-rail__headline,
+  .booking-rail__stats-value,
+  .booking-rail__next-value,
+  .booking-service-card__title {
+    color: rgb(var(--theme-ink-text-rgb) / 1) !important;
+  }
+
+  .booking-rail__description,
+  .booking-rail__stats-meta,
+  .booking-rail__stats-label,
+  .booking-rail__next-copy,
+  .booking-service-card__desc,
+  .booking-rail__signin {
+    color: rgb(var(--theme-ink-muted-rgb) / 1) !important;
+  }
+
+  .booking-rail__stats > div,
+  .booking-rail__next,
+  .booking-service-card,
+  .booking-rail__signin {
+    border-color: rgb(var(--theme-ink-line-rgb) / 0.28) !important;
+  }
+
+  .booking-rail__stats > div,
+  .booking-rail__next,
+  .booking-rail__signin,
+  .booking-service-card--emphasis {
+    background:
+      linear-gradient(180deg, rgb(var(--theme-ink-text-rgb) / 0.1), rgb(var(--theme-ink-text-rgb) / 0.05)) !important;
+  }
+
+  .booking-service-card--subtle {
+    background:
+      linear-gradient(180deg, rgb(var(--theme-ink-text-rgb) / 0.06), rgb(var(--theme-ink-text-rgb) / 0.025)) !important;
+  }
+
+  .booking-rail__signin-link {
+    color: rgb(var(--theme-ink-text-rgb) / 1);
+    text-decoration: underline;
+    text-decoration-color: rgb(var(--theme-primary-rgb) / 0.72);
+    text-underline-offset: 0.16em;
+    transition: color 180ms ease, text-decoration-color 180ms ease;
+  }
+
+  .booking-rail__signin-link:hover {
+    color: rgb(var(--theme-primary-rgb) / 1);
+    text-decoration-color: rgb(var(--theme-primary-rgb) / 1);
   }
 
   .booking-calendar-panel,

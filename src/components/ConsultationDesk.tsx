@@ -215,22 +215,22 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.09),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(106,157,144,0.18),transparent_32%)]" />
               <div className="booking-rail__inner relative space-y-4">
                 <div className="booking-rail__copy space-y-3">
-                  <span className="inline-flex items-center rounded-full border border-white/12 bg-white/8 px-4 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-white/70">
+                  <span className="booking-rail__eyebrow inline-flex items-center rounded-full border px-4 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.24em]">
                     {siteSettings.consultationDesk.railEyebrow}
                   </span>
-                  <h3 className="max-w-lg font-heading text-2xl font-semibold leading-tight text-white sm:text-3xl">
+                  <h3 className="booking-rail__headline max-w-lg font-heading text-2xl font-semibold leading-tight sm:text-3xl">
                     {siteSettings.consultationDesk.railHeadline}
                   </h3>
-                  <p className="max-w-xl text-xs leading-6 text-white/68">
+                  <p className="booking-rail__description max-w-xl text-xs leading-6">
                     {siteSettings.consultationDesk.railDescription}
                   </p>
                 </div>
 
                 <div className="booking-rail__stats editorial-segmented sm:grid-cols-2">
-                  <div className="bg-white/6">
-                    <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/48">{siteSettings.consultationDesk.currentMonthLabel}</p>
-                    <p className="mt-2 font-heading text-2xl text-white">{visibleMonthLabel}</p>
-                    <p className="mt-1.5 text-xs text-white/62">
+                  <div>
+                    <p className="booking-rail__stats-label text-[0.62rem] font-semibold uppercase tracking-[0.2em]">{siteSettings.consultationDesk.currentMonthLabel}</p>
+                    <p className="booking-rail__stats-value mt-2 font-heading text-2xl">{visibleMonthLabel}</p>
+                    <p className="booking-rail__stats-meta mt-1.5 text-xs">
                       {availableDateKeys.length}{' '}
                       {availableDateKeys.length === 1
                         ? siteSettings.consultationDesk.publishedDateSingularLabel
@@ -238,24 +238,24 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                     </p>
                   </div>
 
-                  <div className="bg-white/6">
-                    <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/48">{siteSettings.consultationDesk.selectedDayLabel}</p>
-                    <p className="mt-2 font-heading text-2xl text-white">{format(selectedDate, 'd')}</p>
-                    <p className="mt-1.5 text-xs text-white/62">{format(selectedDate, 'EEEE, MMMM yyyy')}</p>
+                  <div>
+                    <p className="booking-rail__stats-label text-[0.62rem] font-semibold uppercase tracking-[0.2em]">{siteSettings.consultationDesk.selectedDayLabel}</p>
+                    <p className="booking-rail__stats-value mt-2 font-heading text-2xl">{format(selectedDate, 'd')}</p>
+                    <p className="booking-rail__stats-meta mt-1.5 text-xs">{format(selectedDate, 'EEEE, MMMM yyyy')}</p>
                   </div>
                 </div>
 
-                <div className="booking-rail__next rounded-[1.8rem] border border-white/10 bg-white/7 p-5">
+                <div className="booking-rail__next rounded-[1.8rem] border p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/48">{siteSettings.consultationDesk.nextOpeningLabel}</p>
-                    <span className="rounded-full border border-white/10 bg-white/8 px-2.5 py-0.5 text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-white/58">
+                    <p className="booking-rail__stats-label text-[0.62rem] font-semibold uppercase tracking-[0.2em]">{siteSettings.consultationDesk.nextOpeningLabel}</p>
+                    <span className="booking-rail__badge rounded-full border px-2.5 py-0.5 text-[0.56rem] font-semibold uppercase tracking-[0.14em]">
                       {siteSettings.consultationDesk.liveDeskLabel}
                     </span>
                   </div>
-                  <p className="mt-3 font-heading text-2xl text-white">
+                  <p className="booking-rail__next-value mt-3 font-heading text-2xl">
                     {nextAvailableDateKey ? format(parseStoredDate(nextAvailableDateKey), 'MMM d') : siteSettings.consultationDesk.nextOpeningPendingLabel}
                   </p>
-                  <p className="mt-1.5 text-xs leading-5 text-white/62">
+                  <p className="booking-rail__next-copy mt-1.5 text-xs leading-5">
                     {nextAvailableDateKey
                       ? `${format(parseStoredDate(nextAvailableDateKey), 'EEEE, MMMM d')} ${siteSettings.consultationDesk.nearestPublishedSuffix}`
                       : siteSettings.consultationDesk.noFutureDatesText}
@@ -267,14 +267,14 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                     <div
                       key={service.value}
                       className={`booking-service-card flex items-start justify-between gap-4 rounded-[1.2rem] border px-4 py-3 ${
-                        index === 0 ? 'border-white/12 bg-white/10' : 'border-white/8 bg-black/8'
+                        index === 0 ? 'booking-service-card--emphasis' : 'booking-service-card--subtle'
                       }`}
                     >
                       <div>
-                        <p className="text-sm font-semibold text-white">{service.label}</p>
-                        <p className="mt-1 text-xs leading-5 text-white/56">{service.desc}</p>
+                        <p className="booking-service-card__title text-sm font-semibold">{service.label}</p>
+                        <p className="booking-service-card__desc mt-1 text-xs leading-5">{service.desc}</p>
                       </div>
-                      <span className="shrink-0 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-white/58">
+                      <span className="booking-service-card__badge shrink-0 rounded-full border px-3 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.18em]">
                         {service.icon}
                       </span>
                     </div>
@@ -282,11 +282,11 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                 </div>
 
                 {!user && (
-                  <div className="booking-rail__signin rounded-[1.8rem] border border-white/12 bg-white/8 px-5 py-4 text-xs leading-5 text-white/72">
+                  <div className="booking-rail__signin rounded-[1.8rem] border px-5 py-4 text-xs leading-5">
                     {siteSettings.consultationDesk.signInPrompt}
                     <button
                       onClick={onLoginClick}
-                      className="ml-2 font-semibold text-brand-secondary transition hover:text-white"
+                      className="booking-rail__signin-link ml-2 font-semibold"
                     >
                       {siteSettings.consultationDesk.signInCtaLabel}
                     </button>
