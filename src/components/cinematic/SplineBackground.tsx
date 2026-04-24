@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import SplineScene from './SplineScene';
-
-const CLEAN_SPLINE_BACKGROUND_SCENE = 'https://prod.spline.design/mk2OfkXd-CKewFlt/scene.splinecode';
+import { PUBLIC_BACKGROUND_SPLINE_SCENE } from './splineWarmup';
 
 type SplineBackgroundProps = {
   isVisible?: boolean;
@@ -34,7 +33,7 @@ export default function SplineBackground({ isVisible = true, onSceneReady }: Spl
       aria-hidden="true"
     >
       <SplineScene
-        scene={CLEAN_SPLINE_BACKGROUND_SCENE}
+        scene={PUBLIC_BACKGROUND_SPLINE_SCENE}
         className="public-spline-background__scene"
         decorative
         onLoad={() => {

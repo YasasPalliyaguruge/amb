@@ -1,7 +1,6 @@
 import SplineScene from './SplineScene';
 import type { Application } from '@splinetool/runtime';
-
-const PUBLIC_LOADING_SPLINE_SCENE = 'https://prod.spline.design/fi4kVao3vk5K2oVj/scene.splinecode';
+import { PUBLIC_LOADING_SPLINE_SCENE } from './splineWarmup';
 const LOADING_SPLINE_BACKDROP_ID = '6083c9f1-1e5b-4f8d-bb61-89e24484a04d';
 
 type PublicSplinePreloaderProps = {

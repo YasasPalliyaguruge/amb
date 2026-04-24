@@ -17,6 +17,17 @@ import SplineBackground from './components/cinematic/SplineBackground';
 import PublicSplinePreloader from './components/cinematic/PublicSplinePreloader';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 
+const publicExperienceModulesPromise = Promise.all([
+  import('./components/Ethos'),
+  import('./components/ClinicalPractice'),
+  import('./components/AcademicTenure'),
+  import('./components/DoodleArt'),
+  import('./components/ConsultationExperience'),
+  import('./components/ConsultationDesk'),
+  import('./components/Footer'),
+  import('./components/LoginModal'),
+]);
+
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const PatientDashboard = lazy(() => import('./components/PatientDashboard'));
 const ThemeStudio = lazy(() => import('./components/ThemeStudio'));
@@ -30,16 +41,7 @@ const ConsultationExperience = lazy(() => import('./components/ConsultationExper
 const ConsultationDesk = lazy(() => import('./components/ConsultationDesk'));
 
 function preloadPublicExperience() {
-  return Promise.all([
-    import('./components/Ethos'),
-    import('./components/ClinicalPractice'),
-    import('./components/AcademicTenure'),
-    import('./components/DoodleArt'),
-    import('./components/ConsultationExperience'),
-    import('./components/ConsultationDesk'),
-    import('./components/Footer'),
-    import('./components/LoginModal'),
-  ]);
+  return publicExperienceModulesPromise;
 }
 
 function RouteLoader() {
@@ -196,18 +198,24 @@ function MainPortfolio() {
   useEffect(() => {
     let isMounted = true;
 
-    const waitForWindowLoad = new Promise<void>((resolve) => {
-      if (document.readyState === 'complete') {
+    const waitForDocumentReady = new Promise<void>((resolve) => {
+      if (document.readyState !== 'loading') {
         resolve();
         return;
       }
 
-      window.addEventListener('load', () => resolve(), { once: true });
+      document.addEventListener('DOMContentLoaded', () => resolve(), { once: true });
     });
 
-    const waitForFonts = 'fonts' in document ? document.fonts.ready.then(() => undefined) : Promise.resolve();
+    const waitForFonts =
+      'fonts' in document
+        ? Promise.race([
+            document.fonts.ready.then(() => undefined),
+            new Promise<void>((resolve) => window.setTimeout(resolve, 1800)),
+          ])
+        : Promise.resolve();
 
-    Promise.all([waitForWindowLoad, waitForFonts]).finally(() => {
+    Promise.all([waitForDocumentReady, waitForFonts]).finally(() => {
       if (isMounted) {
         setArePublicAssetsReady(true);
       }
@@ -219,7 +227,7 @@ function MainPortfolio() {
   }, []);
 
   useEffect(() => {
-    const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 3200);
+    const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 1800);
     // Avoid blocking on the decorative loader scene if its external request stalls.
     const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), 8500);
     // Keep the site recoverable if the external background scene is delayed by the network.
