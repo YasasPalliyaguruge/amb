@@ -2,6 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { defaultThemePreset, themePresets } from '../src/theme/themePresets';
 import { createThemeState, resolveTheme, sanitizeThemeState } from '../src/theme/themeUtils';
 
+function parseRgb(rgb: string) {
+  return rgb.split(' ').map((channel) => Number(channel));
+}
+
+function luminance([r, g, b]: number[]) {
+  const channels = [r, g, b].map((value) => {
+    const normalized = value / 255;
+    return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(rgbA: string, rgbB: string) {
+  const left = luminance(parseRgb(rgbA));
+  const right = luminance(parseRgb(rgbB));
+  const lighter = Math.max(left, right);
+  const darker = Math.min(left, right);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 describe('theme utilities', () => {
   it('creates a theme state from the preset defaults', () => {
     const state = createThemeState(defaultThemePreset);
@@ -67,5 +88,39 @@ describe('theme utilities', () => {
     expect(resolved.cssVars['--color-brand-primary']).toBe(defaultThemePreset.colors.primary.toUpperCase());
     expect(resolved.cssVars['--theme-primary-rgb']).toMatch(/^\d+ \d+ \d+$/);
     expect(resolved.cssVars['--theme-radius-md']).toMatch(/px$/);
+  });
+
+  it('derives readable ink tokens for dark overlay panels', () => {
+    const resolved = resolveTheme(
+      sanitizeThemeState(
+        {
+          presetId: defaultThemePreset.id,
+          colors: {
+            background: '#F8F3EC',
+            primary: '#4A83B6',
+            accent: '#8E5E9B',
+            text: '#3B2E29',
+          },
+          controls: {
+            surfaceMode: 'ink',
+            contrastMode: 'soft',
+            radiusScale: 1,
+            shadowDepth: 0.8,
+            grainIntensity: 0.12,
+            motionDensity: 0.8,
+          },
+        },
+        themePresets
+      )
+    );
+
+    const inkContrast = contrastRatio(
+      resolved.cssVars['--theme-ink-rgb'],
+      resolved.cssVars['--theme-ink-text-rgb']
+    );
+
+    expect(inkContrast).toBeGreaterThanOrEqual(4.5);
+    expect(resolved.cssVars['--theme-ink-muted-rgb']).toMatch(/^\d+ \d+ \d+$/);
+    expect(resolved.cssVars['--theme-ink-line-rgb']).toMatch(/^\d+ \d+ \d+$/);
   });
 });

@@ -1,9 +1,4 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BrowserRouter as Router, Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { motion, useReducedMotion, useScroll, useSpring } from 'framer-motion';
@@ -15,6 +10,17 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import SplineBackground from './components/cinematic/SplineBackground';
 import PublicSplinePreloader from './components/cinematic/PublicSplinePreloader';
+import {
+  getPublicStartupUiState,
+  isPublicExperiencePrepared,
+  PUBLIC_LOADER_SCENE_EXIT_MS,
+  PUBLIC_LOADER_SCENE_SAFETY_MS,
+  PUBLIC_MAIN_SCENE_SAFETY_MS,
+  PUBLIC_MINIMUM_LOADER_MS,
+  PUBLIC_SITE_HANDOFF_MS,
+  shouldDismissInitialBootLoader,
+  type PublicStartupPhase,
+} from './components/cinematic/publicStartup';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 
 const publicExperienceModulesPromise = Promise.all([
@@ -43,6 +49,27 @@ const ConsultationDesk = lazy(() => import('./components/ConsultationDesk'));
 function preloadPublicExperience() {
   return publicExperienceModulesPromise;
 }
+
+const publicAssetsReadyPromise = (() => {
+  const waitForDocumentReady = new Promise<void>((resolve) => {
+    if (document.readyState !== 'loading') {
+      resolve();
+      return;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => resolve(), { once: true });
+  });
+
+  const waitForFonts =
+    'fonts' in document
+      ? Promise.race([
+          document.fonts.ready.then(() => undefined),
+          new Promise<void>((resolve) => window.setTimeout(resolve, PUBLIC_MINIMUM_LOADER_MS)),
+        ])
+      : Promise.resolve();
+
+  return Promise.all([waitForDocumentReady, waitForFonts]).then(() => undefined);
+})();
 
 function RouteLoader() {
   const { siteSettings } = useSiteSettings();
@@ -151,11 +178,6 @@ function dismissInitialBootLoader() {
   }, 650);
 }
 
-type PublicStartupPhase = 'loading' | 'loader-exiting' | 'site-entering' | 'ready';
-
-const LOADER_SCENE_EXIT_MS = 320;
-const SITE_HANDOFF_MS = 720;
-
 function MainPortfolio() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSplineBackgroundReady, setIsSplineBackgroundReady] = useState(false);
@@ -168,18 +190,40 @@ function MainPortfolio() {
   const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
   const { siteSettings } = useSiteSettings();
 
-  const isPublicExperiencePrepared =
-    arePublicSectionsReady &&
-    arePublicAssetsReady &&
-    hasMinimumLoaderTimeElapsed &&
-    (isPreloaderSplineReady || hasLoaderSafetyElapsed) &&
-    (isSplineBackgroundReady || hasMainSplineSafetyElapsed);
+  const publicExperiencePrepared = useMemo(
+    () =>
+      isPublicExperiencePrepared({
+        arePublicSectionsReady,
+        arePublicAssetsReady,
+        hasMinimumLoaderTimeElapsed,
+        isPreloaderSplineReady,
+        hasLoaderSafetyElapsed,
+        isSplineBackgroundReady,
+        hasMainSplineSafetyElapsed,
+      }),
+    [
+      arePublicSectionsReady,
+      arePublicAssetsReady,
+      hasMinimumLoaderTimeElapsed,
+      isPreloaderSplineReady,
+      hasLoaderSafetyElapsed,
+      isSplineBackgroundReady,
+      hasMainSplineSafetyElapsed,
+    ]
+  );
 
-  const isPublicExperienceReady = startupPhase === 'ready';
-  const isPublicExperienceVisible = startupPhase === 'site-entering' || startupPhase === 'ready';
-  const shouldRenderPreloader = startupPhase !== 'ready';
-  const shouldHidePreloaderScene = startupPhase === 'loader-exiting' || startupPhase === 'site-entering';
-  const shouldFadePreloaderLayer = startupPhase === 'site-entering';
+  const {
+    isPublicExperienceReady,
+    isPublicExperienceVisible,
+    shouldRenderPreloader,
+    shouldHidePreloaderScene,
+    shouldFadePreloaderLayer,
+  } = useMemo(() => getPublicStartupUiState(startupPhase), [startupPhase]);
+
+  const openLoginModal = useCallback(() => setIsLoginModalOpen(true), []);
+  const closeLoginModal = useCallback(() => setIsLoginModalOpen(false), []);
+  const handleBackgroundReady = useCallback(() => setIsSplineBackgroundReady(true), []);
+  const handlePreloaderReady = useCallback(() => setIsPreloaderSplineReady(true), []);
 
   useEffect(() => {
     let isMounted = true;
@@ -198,24 +242,7 @@ function MainPortfolio() {
   useEffect(() => {
     let isMounted = true;
 
-    const waitForDocumentReady = new Promise<void>((resolve) => {
-      if (document.readyState !== 'loading') {
-        resolve();
-        return;
-      }
-
-      document.addEventListener('DOMContentLoaded', () => resolve(), { once: true });
-    });
-
-    const waitForFonts =
-      'fonts' in document
-        ? Promise.race([
-            document.fonts.ready.then(() => undefined),
-            new Promise<void>((resolve) => window.setTimeout(resolve, 1800)),
-          ])
-        : Promise.resolve();
-
-    Promise.all([waitForDocumentReady, waitForFonts]).finally(() => {
+    publicAssetsReadyPromise.finally(() => {
       if (isMounted) {
         setArePublicAssetsReady(true);
       }
@@ -227,11 +254,11 @@ function MainPortfolio() {
   }, []);
 
   useEffect(() => {
-    const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), 1800);
+    const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), PUBLIC_MINIMUM_LOADER_MS);
     // Avoid blocking on the decorative loader scene if its external request stalls.
-    const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), 8500);
+    const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), PUBLIC_LOADER_SCENE_SAFETY_MS);
     // Keep the site recoverable if the external background scene is delayed by the network.
-    const mainSplineSafetyTimer = window.setTimeout(() => setHasMainSplineSafetyElapsed(true), 16000);
+    const mainSplineSafetyTimer = window.setTimeout(() => setHasMainSplineSafetyElapsed(true), PUBLIC_MAIN_SCENE_SAFETY_MS);
 
     return () => {
       window.clearTimeout(minimumTimer);
@@ -249,7 +276,7 @@ function MainPortfolio() {
   }, [startupPhase]);
 
   useEffect(() => {
-    if (!isPreloaderSplineReady && startupPhase === 'loading') {
+    if (!shouldDismissInitialBootLoader(startupPhase, isPreloaderSplineReady)) {
       return;
     }
 
@@ -257,19 +284,19 @@ function MainPortfolio() {
   }, [isPreloaderSplineReady, startupPhase]);
 
   useEffect(() => {
-    if (!isPublicExperiencePrepared || startupPhase !== 'loading') {
+    if (!publicExperiencePrepared || startupPhase !== 'loading') {
       return;
     }
 
     setStartupPhase('loader-exiting');
-  }, [isPublicExperiencePrepared, startupPhase]);
+  }, [publicExperiencePrepared, startupPhase]);
 
   useEffect(() => {
     if (startupPhase !== 'loader-exiting') {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => setStartupPhase('site-entering'), LOADER_SCENE_EXIT_MS);
+    const timeoutId = window.setTimeout(() => setStartupPhase('site-entering'), PUBLIC_LOADER_SCENE_EXIT_MS);
     return () => window.clearTimeout(timeoutId);
   }, [startupPhase]);
 
@@ -278,53 +305,58 @@ function MainPortfolio() {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => setStartupPhase('ready'), SITE_HANDOFF_MS);
+    const timeoutId = window.setTimeout(() => setStartupPhase('ready'), PUBLIC_SITE_HANDOFF_MS);
     return () => window.clearTimeout(timeoutId);
   }, [startupPhase]);
 
-  const visibleSections = siteSettings.homepage.sectionOrder.filter(
-    (sectionId) => siteSettings.homepage.visibility[sectionId]
+  const visibleSections = useMemo(
+    () =>
+      siteSettings.homepage.sectionOrder.filter((sectionId) => siteSettings.homepage.visibility[sectionId]),
+    [siteSettings.homepage.sectionOrder, siteSettings.homepage.visibility]
   );
 
-  const renderSection = (sectionId: HomepageSectionId): ReactNode => {
-    switch (sectionId) {
-      case 'hero':
-        return <Hero />;
-      case 'profile':
-        return <Ethos />;
-      case 'credentials':
-        return <AcademicTenure />;
-      case 'practice':
-        return <ClinicalPractice />;
-      case 'art':
-        return <DoodleArt />;
-      case 'consultation':
-        return <ConsultationExperience />;
-      case 'booking':
-        return <ConsultationDesk onLoginClick={() => setIsLoginModalOpen(true)} />;
-      default:
-        return null;
-    }
-  };
+  const renderSection = useCallback(
+    (sectionId: HomepageSectionId): ReactNode => {
+      switch (sectionId) {
+        case 'hero':
+          return <Hero />;
+        case 'profile':
+          return <Ethos />;
+        case 'credentials':
+          return <AcademicTenure />;
+        case 'practice':
+          return <ClinicalPractice />;
+        case 'art':
+          return <DoodleArt />;
+        case 'consultation':
+          return <ConsultationExperience />;
+        case 'booking':
+          return <ConsultationDesk onLoginClick={openLoginModal} />;
+        default:
+          return null;
+      }
+    },
+    [openLoginModal]
+  );
 
   return (
     <div className={`public-site relative public-site--${startupPhase}`}>
       <SplineBackground
         isVisible={isPublicExperienceVisible}
-        onSceneReady={() => setIsSplineBackgroundReady(true)}
+        onSceneReady={handleBackgroundReady}
       />
       {shouldRenderPreloader && (
         <PublicSplinePreloader
           isLeaving={shouldFadePreloaderLayer}
           isSceneHidden={shouldHidePreloaderScene}
-          onSceneReady={() => setIsPreloaderSplineReady(true)}
+          onSceneReady={handlePreloaderReady}
         />
       )}
       <div className="public-site__content" aria-hidden={isPublicExperienceReady ? undefined : 'true'}>
         <a href="#main-content" className="skip-link">
           {siteSettings.appCopy.skipLinkLabel}
         </a>
-        <Navbar onLoginClick={() => setIsLoginModalOpen(true)} />
+        <Navbar onLoginClick={openLoginModal} />
         <main id="main-content" className="pb-28 lg:pb-0">
           {visibleSections.map((sectionId) => (
             <Suspense key={sectionId} fallback={sectionId === 'hero' ? null : <SectionLoader />}>
@@ -338,7 +370,7 @@ function MainPortfolio() {
         <Suspense fallback={null}>
           <LoginModal
             isOpen={isLoginModalOpen}
-            onClose={() => setIsLoginModalOpen(false)}
+            onClose={closeLoginModal}
           />
         </Suspense>
       </div>

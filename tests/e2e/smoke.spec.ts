@@ -10,7 +10,10 @@ const waitForPublicSite = async (page: Page) => {
 
 test('homepage renders key hero content', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('#initial-boot-loader')).toBeAttached();
   await waitForPublicSite(page);
+  await expect(page.locator('#initial-boot-loader')).toHaveCount(0);
+  await expect(page.locator('.public-spline-preloader')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /Psychological support that stays clear, private, and grounded\./i })).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole('link', { name: 'Book a Consultation' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();

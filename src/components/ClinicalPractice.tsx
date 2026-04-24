@@ -36,25 +36,25 @@ export default function ClinicalPractice() {
               className="profile-panel profile-panel--dark"
             >
               <div className="space-y-4">
-                <p className="caption-meta text-white/50">{siteSettings.services.featuredEyebrow}</p>
-                <h3 className="story-title profile-title-lock text-white">{siteSettings.services.featuredTitle}</h3>
-                <p className="story-body text-white/74">{siteSettings.services.featuredDescription}</p>
+                <p className="caption-meta">{siteSettings.services.featuredEyebrow}</p>
+                <h3 className="story-title profile-title-lock">{siteSettings.services.featuredTitle}</h3>
+                <p className="story-body">{siteSettings.services.featuredDescription}</p>
               </div>
 
               <div className="grid gap-3">
                 {siteSettings.services.benefits.map((benefit) => (
-                  <div key={benefit} className="profile-panel__fact border-white/10 bg-white/7 text-white/74">
+                  <div key={benefit} className="profile-panel__fact">
                     <p className="text-sm leading-7">{benefit}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="rounded-[calc(var(--theme-radius-lg)-0.1rem)] border border-white/10 bg-white/7 p-5">
-                <p className="utility-label text-white/46">{siteSettings.services.toneEyebrow}</p>
-                <h4 className="mt-3 font-heading text-[1.95rem] font-semibold leading-tight text-white">
+              <div className="profile-panel__fact profile-panel__fact--stacked">
+                <p className="utility-label">{siteSettings.services.toneEyebrow}</p>
+                <h4 className="mt-3 font-heading text-[1.95rem] font-semibold leading-tight">
                   {siteSettings.services.toneHeadline}
                 </h4>
-                <p className="mt-3 text-sm leading-7 text-white/68">{siteSettings.services.toneDescription}</p>
+                <p className="mt-3 text-sm leading-7">{siteSettings.services.toneDescription}</p>
               </div>
             </motion.article>
           </InteractivePlane>

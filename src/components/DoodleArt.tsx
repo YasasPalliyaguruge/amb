@@ -76,12 +76,12 @@ export default function DoodleArt() {
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgb(var(--theme-ink-rgb)/0.52)_100%)]" />
                 <div className="absolute bottom-0 left-0 right-0 grid gap-3 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                   <div className="space-y-1.5">
-                    <p className="utility-label text-white/54">{siteSettings.artStudio.panelEyebrow}</p>
-                    <p className="font-heading text-[2rem] font-semibold leading-tight text-white">
+                    <p className="utility-label media-frame__overlay-eyebrow">{siteSettings.artStudio.panelEyebrow}</p>
+                    <p className="media-frame__overlay-title font-heading text-[2rem] font-semibold leading-tight">
                       {siteSettings.artStudio.panelHeadline}
                     </p>
                   </div>
-                  <span className="stats-chip border-white/12 bg-white/10 text-white/70">{siteSettings.artStudio.featureBadge}</span>
+                  <span className="stats-chip media-frame__overlay-badge">{siteSettings.artStudio.featureBadge}</span>
                 </div>
               </div>
             </motion.div>

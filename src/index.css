@@ -1670,7 +1670,7 @@
 
   .public-spline-preloader__scene {
     position: absolute;
-    inset: -18vh -20vw -24vh -16vw;
+    inset: -9vh -10vw -14vh -9vw;
     z-index: 0;
     width: auto;
     height: auto;
@@ -1678,7 +1678,7 @@
     background: transparent;
     filter: saturate(1.03) contrast(1.02) brightness(1.02);
     opacity: 1;
-    transform: scale(1.02);
+    transform: scale(0.82);
     transform-origin: center;
     transition: opacity 300ms ease, filter 300ms ease, transform 300ms ease;
   }
@@ -1690,7 +1690,7 @@
   .public-spline-preloader.public-spline-preloader--scene-hidden .public-spline-preloader__scene {
     opacity: 0;
     filter: saturate(0.98) contrast(0.98) brightness(1);
-    transform: scale(1.015);
+    transform: scale(0.815);
   }
 
   .public-spline-preloader :is(a[href*="spline.design"], a[href*="splinetool.com"], [class*="watermark"], [class*="Watermark"]) {
@@ -1708,11 +1708,14 @@
     overflow: hidden;
     background: transparent;
     opacity: 0;
-    transition: opacity 720ms ease;
+    visibility: hidden;
+    transition: opacity 720ms ease, visibility 0s linear 720ms;
   }
 
   .public-spline-background--visible {
     opacity: 1;
+    visibility: visible;
+    transition: opacity 720ms ease;
   }
 
   .public-spline-background__scene {
@@ -1726,6 +1729,7 @@
     mix-blend-mode: normal;
     transform: scale(1.18) translate(6vw, 4vh);
     transform-origin: center;
+    contain: paint;
     will-change: transform, filter;
     transition: opacity 420ms ease, filter 420ms ease, transform 420ms ease;
   }
@@ -1901,10 +1905,10 @@
   }
 
   .story-card--dark {
-    border-color: rgb(var(--theme-line-rgb) / 0.14);
+    border-color: rgb(var(--theme-ink-line-rgb) / 0.22);
     background:
       linear-gradient(180deg, rgb(var(--theme-ink-rgb) / 0.96), rgb(var(--theme-ink-rgb) / 0.88));
-    color: rgb(255 255 255 / 0.94);
+    color: rgb(var(--theme-ink-text-rgb) / 1);
     box-shadow: 0 28px 72px rgb(var(--theme-text-rgb) / calc(var(--theme-shadow-alpha) * 0.76));
   }
 
@@ -1944,10 +1948,10 @@
   }
 
   .profile-panel--dark {
-    border-color: rgb(var(--theme-line-rgb) / 0.14);
+    border-color: rgb(var(--theme-ink-line-rgb) / 0.22);
     background:
       linear-gradient(180deg, rgb(var(--theme-ink-rgb) / 0.96), rgb(var(--theme-ink-rgb) / 0.88));
-    color: rgb(255 255 255 / 0.94);
+    color: rgb(var(--theme-ink-text-rgb) / 1);
     box-shadow: 0 28px 72px rgb(var(--theme-text-rgb) / calc(var(--theme-shadow-alpha) * 0.76));
   }
 
@@ -1956,6 +1960,12 @@
     border-radius: calc(var(--theme-radius-lg) - 0.1rem);
     background: rgb(var(--theme-surface-rgb) / 0.52);
     padding: 1rem 1.05rem;
+  }
+
+  .profile-panel__fact--stacked {
+    display: grid;
+    gap: 0.25rem;
+    padding: 1.2rem 1.25rem;
   }
 
   .story-note {
@@ -2140,9 +2150,9 @@
     bottom: 0.78rem;
     z-index: 3;
     border-radius: 999px;
-    border: 1px solid rgb(255 255 255 / 0.18);
+    border: 1px solid rgb(var(--theme-ink-line-rgb) / 0.24);
     background: rgb(var(--theme-ink-rgb) / 0.68);
-    color: rgb(255 255 255 / 0.82);
+    color: rgb(var(--theme-ink-muted-rgb) / 1);
     padding: 0.32rem 0.62rem;
     font-size: 0.58rem;
     font-weight: 700;
@@ -2887,17 +2897,51 @@
 
 .profile-panel--dark .caption-meta,
 .story-card--dark .caption-meta {
-  color: rgb(255 255 255 / 0.56);
+  color: rgb(var(--theme-ink-muted-rgb) / 0.94);
 }
 
 .profile-panel--dark .story-title,
 .story-card--dark .story-title {
-  color: rgb(255 255 255 / 0.94);
+  color: rgb(var(--theme-ink-text-rgb) / 1);
 }
 
 .profile-panel--dark .story-body,
 .story-card--dark .story-body {
-  color: rgb(255 255 255 / 0.72);
+  color: rgb(var(--theme-ink-muted-rgb) / 1);
+}
+
+.profile-panel--dark .utility-label {
+  color: rgb(var(--theme-ink-muted-rgb) / 0.92);
+}
+
+.profile-panel--dark .profile-panel__fact {
+  border-color: rgb(var(--theme-ink-line-rgb) / 0.24);
+  background: linear-gradient(180deg, rgb(var(--theme-ink-text-rgb) / 0.09), rgb(var(--theme-ink-text-rgb) / 0.05));
+  color: rgb(var(--theme-ink-muted-rgb) / 1);
+}
+
+.profile-panel--dark .profile-panel__fact h4,
+.profile-panel--dark .profile-panel__fact strong {
+  color: rgb(var(--theme-ink-text-rgb) / 1);
+}
+
+.consultation-experience__feature-media {
+  border-color: rgb(var(--theme-ink-line-rgb) / 0.24);
+  background: rgb(var(--theme-ink-text-rgb) / 0.04);
+}
+
+.media-frame__overlay-eyebrow {
+  color: rgb(var(--theme-ink-muted-rgb) / 0.94);
+}
+
+.media-frame__overlay-title {
+  color: rgb(var(--theme-ink-text-rgb) / 1);
+}
+
+.media-frame__overlay-badge {
+  border-color: rgb(var(--theme-ink-line-rgb) / 0.24);
+  background: rgb(var(--theme-ink-text-rgb) / 0.08);
+  color: rgb(var(--theme-ink-muted-rgb) / 1);
 }
 
 .react-calendar {

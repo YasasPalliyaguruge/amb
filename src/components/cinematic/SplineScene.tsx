@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { Application } from '@splinetool/runtime';
 import { splineRuntimeWarmupPromise } from './splineWarmup';
 
@@ -12,7 +12,7 @@ type SplineSceneProps = {
   onLoad?: (app: Application) => void;
 };
 
-export default function SplineScene({
+function SplineScene({
   scene,
   className = '',
   decorative = true,
@@ -20,28 +20,45 @@ export default function SplineScene({
   onLoad,
 }: SplineSceneProps) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const hasHandledLoadRef = useRef(false);
+
+  useEffect(() => {
+    hasHandledLoadRef.current = false;
+    setIsLoaded(false);
+  }, [scene]);
 
   if (!scene?.trim()) {
     return null;
   }
+
+  const handleLoad = useCallback(
+    (app: Application) => {
+      if (transparentBackground) {
+        app.setBackgroundColor('rgba(0, 0, 0, 0)');
+        app.canvas.style.background = 'transparent';
+        app.requestRender();
+      }
+
+      if (!hasHandledLoadRef.current) {
+        hasHandledLoadRef.current = true;
+        setIsLoaded(true);
+        onLoad?.(app);
+      }
+    },
+    [onLoad, transparentBackground]
+  );
 
   return (
     <div className={`spline-scene ${className}`} aria-hidden={decorative ? 'true' : undefined}>
       <Suspense fallback={null}>
         <Spline
           scene={scene}
-          onLoad={(app) => {
-            if (transparentBackground) {
-              app.setBackgroundColor('rgba(0, 0, 0, 0)');
-              app.canvas.style.background = 'transparent';
-              app.requestRender();
-            }
-            setIsLoaded(true);
-            onLoad?.(app);
-          }}
+          onLoad={handleLoad}
           className={`spline-scene__canvas ${isLoaded ? 'spline-scene__canvas--loaded' : ''}`}
         />
       </Suspense>
     </div>
   );
 }
+
+export default memo(SplineScene);

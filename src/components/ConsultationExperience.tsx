@@ -37,7 +37,7 @@ export default function ConsultationExperience() {
               className="profile-panel profile-panel--dark consultation-experience__feature"
             >
               {featureImage ? (
-                <div className="overflow-hidden rounded-[calc(var(--theme-radius-xl)-0.3rem)] border border-white/10">
+                <div className="consultation-experience__feature-media overflow-hidden rounded-[calc(var(--theme-radius-xl)-0.3rem)] border">
                   <img
                     src={featureImage}
                     alt={siteSettings.consultationExperience.featureAlt}
@@ -50,14 +50,14 @@ export default function ConsultationExperience() {
                 </div>
               ) : null}
               <div className="space-y-4">
-                <p className="caption-meta text-white/50">{siteSettings.consultationExperience.outcomeLabel}</p>
-                <h3 className="story-title profile-title-lock text-white">{siteSettings.consultationExperience.outcomeHeadline}</h3>
-                <p className="story-body text-white/72">{siteSettings.consultationExperience.outcomeDescription}</p>
+                <p className="caption-meta">{siteSettings.consultationExperience.outcomeLabel}</p>
+                <h3 className="story-title profile-title-lock">{siteSettings.consultationExperience.outcomeHeadline}</h3>
+                <p className="story-body">{siteSettings.consultationExperience.outcomeDescription}</p>
               </div>
 
               <div className="grid gap-3">
                 {siteSettings.consultationExperience.factCards.map((fact) => (
-                  <div key={fact} className="profile-panel__fact border-white/10 bg-white/7 text-white/74">
+                  <div key={fact} className="profile-panel__fact">
                     <p className="text-sm leading-7">{fact}</p>
                   </div>
                 ))}

@@ -3,32 +3,42 @@ export const PUBLIC_BACKGROUND_SPLINE_SCENE = 'https://prod.spline.design/mk2Ofk
 
 export const splineRuntimeWarmupPromise = import('@splinetool/react-spline');
 
-const warmedSceneUrls = new Set<string>();
+const warmedScenePromises = new Map<string, Promise<void>>();
+let publicSplineWarmupPromise: Promise<PromiseSettledResult<unknown>[]> | null = null;
 
 const hasFetchSupport = () => typeof window !== 'undefined' && typeof window.fetch === 'function';
 
 export function warmSplineScene(sceneUrl: string) {
-  if (!sceneUrl || warmedSceneUrls.has(sceneUrl) || !hasFetchSupport()) {
+  if (!sceneUrl || !hasFetchSupport()) {
     return Promise.resolve();
   }
 
-  warmedSceneUrls.add(sceneUrl);
+  const cachedPromise = warmedScenePromises.get(sceneUrl);
+  if (cachedPromise) {
+    return cachedPromise;
+  }
 
-  return window
+  const warmupPromise = window
     .fetch(sceneUrl, {
       mode: 'cors',
       credentials: 'omit',
       cache: 'force-cache',
-      priority: 'high',
     } as RequestInit)
     .then(() => undefined)
     .catch(() => undefined);
+
+  warmedScenePromises.set(sceneUrl, warmupPromise);
+  return warmupPromise;
 }
 
 export function warmPublicSplineAssets() {
-  return Promise.allSettled([
-    splineRuntimeWarmupPromise,
-    warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE),
-    warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE),
-  ]);
+  if (!publicSplineWarmupPromise) {
+    publicSplineWarmupPromise = Promise.allSettled([
+      splineRuntimeWarmupPromise,
+      warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE),
+      warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE),
+    ]);
+  }
+
+  return publicSplineWarmupPromise;
 }
