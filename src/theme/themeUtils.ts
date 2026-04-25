@@ -63,6 +63,28 @@ function contrastRatio(hexA: string, hexB: string) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+function ensureContrastAgainstBackground(background: string, candidate: string, fallbackText: string, minimumContrast: number) {
+  const normalizedBackground = normalizeHex(background);
+  const normalizedFallback = normalizeHex(fallbackText);
+  let nextColor = normalizeHex(candidate);
+
+  if (contrastRatio(normalizedBackground, nextColor) >= minimumContrast) {
+    return nextColor;
+  }
+
+  for (let step = 1; step <= 6; step += 1) {
+    const weight = step / 6;
+    nextColor = mix(nextColor, normalizedFallback, weight);
+    if (contrastRatio(normalizedBackground, nextColor) >= minimumContrast) {
+      return nextColor;
+    }
+  }
+
+  return contrastRatio(normalizedBackground, normalizedFallback) >= minimumContrast
+    ? normalizedFallback
+    : ensureReadableText(normalizedBackground, normalizedFallback);
+}
+
 function ensureReadableText(background: string, requestedText: string) {
   const normalizedBackground = normalizeHex(background);
   const normalizedText = normalizeHex(requestedText);
@@ -123,23 +145,27 @@ function lineBlend(surface: string, text: string, contrastMode: ContrastMode) {
 }
 
 function mutedBlend(text: string, background: string, contrastMode: ContrastMode) {
+  let candidate: string;
   if (contrastMode === 'soft') {
-    return mix(text, background, 0.54);
+    candidate = mix(text, background, 0.54);
+  } else if (contrastMode === 'high') {
+    candidate = mix(text, background, 0.32);
+  } else {
+    candidate = mix(text, background, 0.42);
   }
-  if (contrastMode === 'high') {
-    return mix(text, background, 0.32);
-  }
-  return mix(text, background, 0.42);
+  return ensureContrastAgainstBackground(background, candidate, text, 4.5);
 }
 
 function inkMutedBlend(text: string, background: string, contrastMode: ContrastMode) {
+  let candidate: string;
   if (contrastMode === 'soft') {
-    return mix(text, background, 0.32);
+    candidate = mix(text, background, 0.32);
+  } else if (contrastMode === 'high') {
+    candidate = mix(text, background, 0.2);
+  } else {
+    candidate = mix(text, background, 0.26);
   }
-  if (contrastMode === 'high') {
-    return mix(text, background, 0.2);
-  }
-  return mix(text, background, 0.26);
+  return ensureContrastAgainstBackground(background, candidate, text, 4.5);
 }
 
 export function createThemeState(preset: ThemePreset): ThemeState {

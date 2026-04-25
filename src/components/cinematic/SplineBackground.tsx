@@ -47,6 +47,7 @@ function SplineBackground({ isVisible = true, onSceneReady }: SplineBackgroundPr
         className="public-spline-background__scene"
         decorative
         onLoad={handleSceneReady}
+        onError={handleSceneReady}
       />
       <div className="public-spline-background__veil" />
     </div>

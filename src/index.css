@@ -3550,15 +3550,55 @@
 }
 
   @media (max-width: 640px) {
+    .public-spline-preloader {
+      display: none !important;
+    }
+
     .public-spline-background__scene {
-      inset: -8vh -56vw;
-      transform: scale(1.08) translate(8vw, 1vh);
-      filter: saturate(0.96) contrast(0.95) brightness(1.04);
+      inset: -6vh -48vw;
+      transform: scale(1.03) translate(9vw, 2vh);
+      filter: saturate(0.98) contrast(0.97) brightness(1.02);
+      will-change: auto;
     }
 
     .public-spline-background--hero .public-spline-background__scene {
-      transform: scale(1.16) translate(26vw, 23vh);
-      filter: saturate(1.02) contrast(1) brightness(1.05);
+      transform: scale(1.11) translate(21vw, 18vh);
+      filter: saturate(1.01) contrast(0.99) brightness(1.03);
+    }
+
+    .section-shell:not(.section-shell--hero):not(.section-shell--footer) {
+      content-visibility: auto;
+      contain-intrinsic-size: 920px;
+    }
+
+    .theme-panel,
+    .theme-panel-soft,
+    .theme-panel-dark,
+    .story-card,
+    .timeline-card,
+    .feature-card,
+    .proof-card,
+    .booking-location-card,
+    .booking-month-summary,
+    .patient-appointment-row {
+      backdrop-filter: blur(calc(var(--theme-blur) * 0.55));
+    }
+
+    .app-shell [class*="text-brand-text/"],
+    .app-shell [class*="text-[rgb(var(--theme-text-rgb)/0."] {
+      color: rgb(var(--theme-text-rgb) / 0.92) !important;
+    }
+
+    .app-shell [class*="text-[rgb(var(--theme-muted-rgb)/0."] {
+      color: rgb(var(--theme-muted-rgb) / 1) !important;
+    }
+
+    .app-shell [class*="text-[rgb(var(--theme-ink-text-rgb)/0."] {
+      color: rgb(var(--theme-ink-text-rgb) / 0.96) !important;
+    }
+
+    .app-shell [class*="text-[rgb(var(--theme-ink-muted-rgb)/0."] {
+      color: rgb(var(--theme-ink-muted-rgb) / 1) !important;
     }
 
     .section-shell {
@@ -3598,6 +3638,10 @@
   .display-hero {
     font-size: clamp(2.28rem, 10.6vw, 3.15rem);
     line-height: 0.98;
+  }
+
+  .display-lead {
+    color: rgb(var(--theme-text-rgb) / 0.94);
   }
 
   .display-lead,

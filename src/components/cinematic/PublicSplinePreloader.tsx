@@ -44,6 +44,10 @@ export default memo(function PublicSplinePreloader({ isLeaving, isSceneHidden, o
     onSceneReady?.();
   }, [onSceneReady]);
 
+  const handleSceneError = useCallback(() => {
+    onSceneReady?.();
+  }, [onSceneReady]);
+
   return (
     <div
       className={`public-spline-preloader ${isSceneHidden ? 'public-spline-preloader--scene-hidden' : ''} ${isLeaving ? 'public-spline-preloader--leaving' : ''}`}
@@ -55,6 +59,7 @@ export default memo(function PublicSplinePreloader({ isLeaving, isSceneHidden, o
         className="public-spline-preloader__scene"
         decorative
         onLoad={handleSceneReady}
+        onError={handleSceneError}
       />
     </div>
   );

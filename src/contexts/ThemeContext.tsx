@@ -1,10 +1,13 @@
-import { createContext, type CSSProperties, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, type CSSProperties, ReactNode, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { defaultThemePreset, themePresets } from '../theme/themePresets';
 import { createThemeState, randomThemeState, resolveTheme, sanitizeThemeState } from '../theme/themeUtils';
 import type { ContrastMode, SurfaceMode, ThemeState } from '../theme/types';
 import { useSiteSettings } from './SiteSettingsContext';
-
-const STORAGE_KEY = 'amb-theme-studio-override-v1';
+import {
+  readStoredThemeOverride,
+  writeStoredThemeOverride,
+  writeCachedResolvedTheme,
+} from '../utils/themeBootStorage';
 
 interface ThemeContextType {
   theme: ThemeState;
@@ -21,40 +24,31 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-function readStoredThemeOverride(): ThemeState | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw) as ThemeState;
-    return sanitizeThemeState(parsed, themePresets);
-  } catch {
-    return null;
-  }
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { siteSettings } = useSiteSettings();
-  const [visitorOverride, setVisitorOverride] = useState<ThemeState | null>(() => readStoredThemeOverride());
+  const [visitorOverride, setVisitorOverride] = useState<ThemeState | null>(() =>
+    siteSettings.themeStudioEnabled ? readStoredThemeOverride() : null
+  );
+
+  useEffect(() => {
+    if (!siteSettings.themeStudioEnabled || visitorOverride) {
+      return;
+    }
+
+    const storedOverride = readStoredThemeOverride();
+    if (storedOverride) {
+      setVisitorOverride(storedOverride);
+    }
+  }, [siteSettings.themeStudioEnabled, visitorOverride]);
 
   useEffect(() => {
     if (siteSettings.themeStudioEnabled) {
-      if (visitorOverride) {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(visitorOverride));
-      } else {
-        window.localStorage.removeItem(STORAGE_KEY);
-      }
+      writeStoredThemeOverride(visitorOverride);
       return;
     }
 
     setVisitorOverride(null);
-    window.localStorage.removeItem(STORAGE_KEY);
+    writeStoredThemeOverride(null);
   }, [siteSettings.themeStudioEnabled, visitorOverride]);
 
   const theme = useMemo(
@@ -63,6 +57,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 
   const resolvedTheme = useMemo(() => resolveTheme(theme), [theme]);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    Object.entries(resolvedTheme.cssVars).forEach(([key, value]) => {
+      root.style.setProperty(key, String(value));
+    });
+    root.dataset.surfaceMode = theme.controls.surfaceMode;
+    root.dataset.contrastMode = theme.controls.contrastMode;
+
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', theme.colors.primary);
+    }
+
+    writeCachedResolvedTheme({
+      cssVars: resolvedTheme.cssVars,
+      surfaceMode: theme.controls.surfaceMode,
+      contrastMode: theme.controls.contrastMode,
+      themeColor: theme.colors.primary,
+    });
+  }, [resolvedTheme.cssVars, theme.colors.primary, theme.controls.contrastMode, theme.controls.surfaceMode]);
 
   const value = useMemo<ThemeContextType>(() => ({
     theme,

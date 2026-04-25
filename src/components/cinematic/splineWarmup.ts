@@ -3,14 +3,16 @@ export const PUBLIC_BACKGROUND_SPLINE_SCENE = 'https://prod.spline.design/mk2Ofk
 
 export const splineRuntimeWarmupPromise = import('@splinetool/react-spline');
 
-const warmedScenePromises = new Map<string, Promise<void>>();
+const warmedScenePromises = new Map<string, Promise<boolean>>();
 let publicSplineWarmupPromise: Promise<PromiseSettledResult<unknown>[]> | null = null;
 
 const hasFetchSupport = () => typeof window !== 'undefined' && typeof window.fetch === 'function';
+export const isMobileSplineViewport = () =>
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
 export function warmSplineScene(sceneUrl: string) {
   if (!sceneUrl || !hasFetchSupport()) {
-    return Promise.resolve();
+    return Promise.resolve(false);
   }
 
   const cachedPromise = warmedScenePromises.get(sceneUrl);
@@ -24,8 +26,8 @@ export function warmSplineScene(sceneUrl: string) {
       credentials: 'omit',
       cache: 'force-cache',
     } as RequestInit)
-    .then(() => undefined)
-    .catch(() => undefined);
+    .then((response) => response.ok)
+    .catch(() => false);
 
   warmedScenePromises.set(sceneUrl, warmupPromise);
   return warmupPromise;
@@ -33,11 +35,13 @@ export function warmSplineScene(sceneUrl: string) {
 
 export function warmPublicSplineAssets() {
   if (!publicSplineWarmupPromise) {
-    publicSplineWarmupPromise = Promise.allSettled([
-      splineRuntimeWarmupPromise,
-      warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE),
-      warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE),
-    ]);
+    const tasks: Promise<unknown>[] = [splineRuntimeWarmupPromise, warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE)];
+
+    if (!isMobileSplineViewport()) {
+      tasks.push(warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE));
+    }
+
+    publicSplineWarmupPromise = Promise.allSettled(tasks);
   }
 
   return publicSplineWarmupPromise;

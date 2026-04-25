@@ -1,6 +1,6 @@
 import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { Application } from '@splinetool/runtime';
-import { splineRuntimeWarmupPromise } from './splineWarmup';
+import { splineRuntimeWarmupPromise, warmSplineScene } from './splineWarmup';
 
 const Spline = lazy(() => splineRuntimeWarmupPromise);
 
@@ -10,6 +10,7 @@ type SplineSceneProps = {
   decorative?: boolean;
   transparentBackground?: boolean;
   onLoad?: (app: Application) => void;
+  onError?: (error: unknown) => void;
 };
 
 function SplineScene({
@@ -18,18 +19,45 @@ function SplineScene({
   decorative = true,
   transparentBackground = true,
   onLoad,
+  onError,
 }: SplineSceneProps) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [canRenderScene, setCanRenderScene] = useState(false);
   const hasHandledLoadRef = useRef(false);
+  const hasReportedErrorRef = useRef(false);
 
   useEffect(() => {
     hasHandledLoadRef.current = false;
+    hasReportedErrorRef.current = false;
     setIsLoaded(false);
-  }, [scene]);
+    setCanRenderScene(false);
 
-  if (!scene?.trim()) {
-    return null;
-  }
+    if (!scene?.trim()) {
+      return;
+    }
+
+    let isActive = true;
+
+    warmSplineScene(scene).then((didWarmScene) => {
+      if (!isActive) {
+        return;
+      }
+
+      if (didWarmScene) {
+        setCanRenderScene(true);
+        return;
+      }
+
+      if (!hasReportedErrorRef.current) {
+        hasReportedErrorRef.current = true;
+        onError?.(new Error(`Failed to warm Spline scene: ${scene}`));
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [onError, scene]);
 
   const handleLoad = useCallback(
     (app: Application) => {
@@ -47,6 +75,10 @@ function SplineScene({
     },
     [onLoad, transparentBackground]
   );
+
+  if (!scene?.trim() || !canRenderScene) {
+    return null;
+  }
 
   return (
     <div className={`spline-scene ${className}`} aria-hidden={decorative ? 'true' : undefined}>

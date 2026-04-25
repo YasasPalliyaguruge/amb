@@ -27,6 +27,50 @@
     <link rel="preload" href="https://prod.spline.design/mk2OfkXd-CKewFlt/scene.splinecode" as="fetch" crossorigin />
     <link rel="preload" as="image" href="/art/Screenshot 2026-03-23 123803.png" />
 
+    <script>
+      (function () {
+        try {
+          var raw = window.localStorage.getItem('amb-resolved-theme-cache-v1');
+          if (!raw) return;
+
+          var cachedTheme = JSON.parse(raw);
+          if (!cachedTheme || !cachedTheme.cssVars) return;
+
+          var root = document.documentElement;
+          Object.entries(cachedTheme.cssVars).forEach(function (entry) {
+            root.style.setProperty(entry[0], entry[1]);
+          });
+
+          if (cachedTheme.surfaceMode) {
+            root.dataset.surfaceMode = cachedTheme.surfaceMode;
+          }
+
+          if (cachedTheme.contrastMode) {
+            root.dataset.contrastMode = cachedTheme.contrastMode;
+          }
+
+          if (cachedTheme.themeColor) {
+            var themeMeta = document.querySelector('meta[name="theme-color"]');
+            if (themeMeta) {
+              themeMeta.setAttribute('content', cachedTheme.themeColor);
+            }
+          }
+
+          var bg = cachedTheme.cssVars['--theme-bg-rgb'];
+          var text = cachedTheme.cssVars['--theme-text-rgb'];
+          var muted = cachedTheme.cssVars['--theme-muted-rgb'];
+          var accent = cachedTheme.cssVars['--theme-primary-rgb'];
+
+          if (bg) root.style.setProperty('--boot-bg', bg);
+          if (text) root.style.setProperty('--boot-text', text);
+          if (muted) root.style.setProperty('--boot-muted', muted);
+          if (accent) root.style.setProperty('--boot-accent', accent);
+        } catch (_) {
+          // Keep the static boot palette if cache access fails.
+        }
+      })();
+    </script>
+
     <style>
       :root {
         --boot-bg: 244 236 227;

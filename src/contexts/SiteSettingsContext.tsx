@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { defaultSiteSettings, sanitizeSiteSettings, siteSettingsDocId, type SiteSettings } from '../siteSettings/siteSettings';
+import { getInitialSiteSettings, writeCachedSiteSettings } from '../utils/themeBootStorage';
 
 interface SiteSettingsContextValue {
   siteSettings: SiteSettings;
@@ -10,8 +11,8 @@ interface SiteSettingsContextValue {
 const SiteSettingsContext = createContext<SiteSettingsContextValue | undefined>(undefined);
 
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(defaultSiteSettings);
-  const [loading, setLoading] = useState(true);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getInitialSiteSettings());
+  const [loading, setLoading] = useState(siteSettings === defaultSiteSettings);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -36,7 +37,9 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
               return;
             }
 
-            setSiteSettings(snapshot.exists() ? sanitizeSiteSettings(snapshot.data()) : defaultSiteSettings);
+            const nextSettings = snapshot.exists() ? sanitizeSiteSettings(snapshot.data()) : defaultSiteSettings;
+            setSiteSettings(nextSettings);
+            writeCachedSiteSettings(nextSettings);
             setError('');
             setLoading(false);
           },
@@ -45,7 +48,6 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             if (!isMounted) {
               return;
             }
-            setSiteSettings(defaultSiteSettings);
             setError('The live website settings could not be loaded, so local defaults are being used.');
             setLoading(false);
           }
@@ -55,7 +57,6 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         if (!isMounted) {
           return;
         }
-        setSiteSettings(defaultSiteSettings);
         setError('The live website settings could not be loaded, so local defaults are being used.');
         setLoading(false);
       }
