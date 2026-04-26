@@ -177,7 +177,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <button
                 ref={closeButtonRef}
                 onClick={onClose}
-                className="absolute right-5 top-5 rounded-full border border-[rgb(var(--theme-line-rgb)/0.25)] bg-[rgb(var(--theme-surface-rgb)/0.8)] p-2 text-[rgb(var(--theme-text-rgb)/0.62)] transition hover:text-[rgb(var(--theme-text-rgb))]"
+                className="absolute right-5 top-5 rounded-full border border-[rgb(var(--theme-line-rgb)/0.25)] bg-[rgb(var(--theme-surface-rgb)/0.84)] p-2 text-[rgb(var(--theme-text-rgb)/0.84)] transition hover:text-[rgb(var(--theme-text-rgb))]"
                 aria-label={copy.closeAriaLabel}
               >
                 <X className="h-4 w-4" />

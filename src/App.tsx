@@ -23,6 +23,7 @@ import {
 } from './components/cinematic/publicStartup';
 import { isMobileSplineViewport, isPublicExperienceRoute } from './components/cinematic/splineWarmup';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
+import { recordPerformanceMetric } from './utils/performanceMonitor';
 
 const publicExperienceModulesPromise = Promise.all([
   import('./components/Ethos'),
@@ -324,6 +325,18 @@ function MainPortfolio() {
     const timeoutId = window.setTimeout(() => setStartupPhase('ready'), PUBLIC_SITE_HANDOFF_MS);
     return () => window.clearTimeout(timeoutId);
   }, [startupPhase]);
+
+  useEffect(() => {
+    if (startupPhase !== 'ready') {
+      return;
+    }
+
+    recordPerformanceMetric('public-ready', performance.now(), {
+      mobileViewport: isMobileViewport,
+      splineBackgroundReady: isSplineBackgroundReady,
+      splinePreloaderUsed: shouldUseSplinePreloader,
+    }, `public-ready:${isMobileViewport ? 'mobile' : 'desktop'}:${window.location.pathname}`);
+  }, [isMobileViewport, isSplineBackgroundReady, shouldUseSplinePreloader, startupPhase]);
 
   const visibleSections = useMemo(
     () =>

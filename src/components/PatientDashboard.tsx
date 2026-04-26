@@ -46,7 +46,7 @@ function getStatusStyles(status: string) {
     case 'scheduled':
       return 'border-emerald-500/18 bg-emerald-50 text-emerald-700';
     case 'completed':
-      return 'border-[rgb(var(--theme-secondary-rgb)/0.2)] bg-[rgb(var(--theme-secondary-rgb)/0.18)] text-[rgb(var(--theme-text-rgb)/0.78)]';
+      return 'border-[rgb(var(--theme-secondary-rgb)/0.2)] bg-[rgb(var(--theme-secondary-rgb)/0.18)] text-[rgb(var(--theme-text-rgb)/0.9)]';
     case 'cancelled':
       return 'border-rose-500/16 bg-rose-50 text-rose-700';
     default:
@@ -174,7 +174,7 @@ export default function PatientDashboard() {
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-[rgb(var(--theme-line-rgb)/0.6)] border-t-[rgb(var(--theme-primary-rgb))]" />
           <div className="mt-4 space-y-1">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[rgb(var(--theme-muted-rgb))]">Opening portal</p>
-            <p className="text-sm text-[rgb(var(--theme-text-rgb)/0.72)]">Loading your appointments.</p>
+            <p className="text-sm text-[rgb(var(--theme-text-rgb)/0.88)]">Loading your appointments.</p>
           </div>
         </div>
       </div>
@@ -310,7 +310,7 @@ export default function PatientDashboard() {
                 <div className="space-y-2">
                   <label htmlFor="client-phone" className="patient-field-label">Phone Number</label>
                   <div className="relative">
-                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[rgb(var(--theme-muted-rgb)/0.76)]" />
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[rgb(var(--theme-muted-rgb)/0.92)]" />
                     <input
                       id="client-phone"
                       name="phone"
@@ -449,7 +449,7 @@ export default function PatientDashboard() {
                           </>
                         )
                       ) : (
-                        <span className="text-sm text-[rgb(var(--theme-muted-rgb)/0.72)]">No action needed</span>
+                        <span className="text-sm text-[rgb(var(--theme-muted-rgb)/0.92)]">No action needed</span>
                       )}
                     </div>
                   </article>

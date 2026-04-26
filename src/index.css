@@ -365,6 +365,16 @@
     box-shadow: 0 0 0 4px rgb(var(--theme-primary-rgb) / 0.12);
   }
 
+  .theme-input::placeholder,
+  .theme-textarea::placeholder {
+    color: rgb(var(--theme-muted-rgb) / 0.96);
+  }
+
+  .theme-select option {
+    color: rgb(var(--theme-text-rgb) / 1);
+    background: rgb(var(--theme-surface-strong-rgb) / 1);
+  }
+
   .website-settings-form {
     display: grid;
     gap: 1rem;
@@ -1319,7 +1329,7 @@
     border: 0;
     background: transparent;
     padding: 0;
-    color: rgb(var(--theme-text-rgb) / 0.82);
+    color: rgb(var(--theme-text-rgb) / 0.94);
     font-size: 0.95rem;
     font-weight: 600;
     outline: none;

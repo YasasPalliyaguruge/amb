@@ -138,7 +138,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment, userEmai
               <button 
                 ref={closeButtonRef}
                 onClick={onClose}
-                className="absolute top-5 right-5 rounded-full p-1.5 text-[rgb(var(--theme-text-rgb)/0.42)] transition-colors hover:bg-[rgb(var(--theme-secondary-rgb)/0.18)] hover:text-[rgb(var(--theme-text-rgb))]"
+                className="absolute top-5 right-5 rounded-full p-1.5 text-[rgb(var(--theme-text-rgb)/0.76)] transition-colors hover:bg-[rgb(var(--theme-secondary-rgb)/0.18)] hover:text-[rgb(var(--theme-text-rgb))]"
                 aria-label="Close reschedule dialog"
               >
                 <X className="w-5 h-5" />

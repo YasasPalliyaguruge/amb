@@ -44,7 +44,7 @@ export default function AcademicTenure() {
               <div className="grid gap-3">
                 {siteSettings.credentials.highlights.map((highlight) => (
                   <div key={highlight} className="profile-panel__fact py-4">
-                    <p className="text-sm leading-7 text-[rgb(var(--theme-text-rgb)/0.76)]">{highlight}</p>
+                    <p className="text-sm leading-7 text-[rgb(var(--theme-text-rgb)/0.88)]">{highlight}</p>
                   </div>
                 ))}
               </div>
