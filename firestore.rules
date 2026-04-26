@@ -79,6 +79,7 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['slots']) &&
         (
           request.resource.data.slots.size() == resource.data.slots.size() - 1 ||
+          request.resource.data.slots.size() == resource.data.slots.size() ||
           request.resource.data.slots.size() == resource.data.slots.size() + 1
         );
     }

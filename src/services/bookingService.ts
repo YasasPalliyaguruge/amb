@@ -15,7 +15,20 @@ const TRANSIENT_BOOKING_ERROR_CODES = new Set([
 ]);
 
 function wait(ms: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
+  return new Promise((resolve) => globalThis.setTimeout(resolve, ms));
+}
+
+function isBrowserOnline() {
+  return typeof navigator === 'undefined' || navigator.onLine;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function sortSlots(slots: string[]): string[] {
@@ -114,7 +127,7 @@ async function runBookingTransactionWithRecovery<T>(
       if (
         !isRetryableBookingError(error) ||
         attempt >= maxAttempts ||
-        !navigator.onLine
+        !isBrowserOnline()
       ) {
         throw normalizeBookingError(error);
       }
@@ -213,6 +226,8 @@ export async function bookConsultation(
   serviceType: string,
   notes: string = ''
 ): Promise<{ success: boolean; appointmentId: string; notificationState: BookingNotificationState }> {
+  const safeClientName = escapeHtml(clientName);
+  const safeServiceType = escapeHtml(serviceType);
   const result = await createAppointmentBooking({
     date,
     timeSlot,
@@ -226,7 +241,7 @@ export async function bookConsultation(
   const notificationState = await queueBookingMail(
     clientEmail,
     'Consultation Booked - Aadhila M. Biswas',
-    `<p>Hi ${clientName},</p><p>Your <strong>${serviceType}</strong> consultation is confirmed for <strong>${date}</strong> at <strong>${timeSlot}</strong>.</p><p>Thank you!</p>`,
+    `<p>Hi ${safeClientName},</p><p>Your <strong>${safeServiceType}</strong> consultation is confirmed for <strong>${escapeHtml(date)}</strong> at <strong>${escapeHtml(timeSlot)}</strong>.</p><p>Thank you!</p>`,
     `Hi ${clientName},\n\nYour ${serviceType} consultation is confirmed for ${date} at ${timeSlot}.\n\nThank you!`
   );
 
@@ -234,12 +249,14 @@ export async function bookConsultation(
 }
 
 export async function bookConsultationAsAdmin(payload: BookingPayload) {
+  const safeClientName = escapeHtml(payload.clientName);
+  const safeServiceType = escapeHtml(payload.serviceType);
   const result = await createAppointmentBooking(payload);
 
   const notificationState = await queueBookingMail(
     payload.clientEmail,
     'Consultation Scheduled - Aadhila M. Biswas',
-    `<p>Hi ${payload.clientName},</p><p>Your <strong>${payload.serviceType}</strong> consultation is confirmed for <strong>${payload.date}</strong> at <strong>${payload.timeSlot}</strong>.</p><p>Thank you!</p>`,
+    `<p>Hi ${safeClientName},</p><p>Your <strong>${safeServiceType}</strong> consultation is confirmed for <strong>${escapeHtml(payload.date)}</strong> at <strong>${escapeHtml(payload.timeSlot)}</strong>.</p><p>Thank you!</p>`,
     `Hi ${payload.clientName},\n\nYour ${payload.serviceType} consultation is confirmed for ${payload.date} at ${payload.timeSlot}.\n\nThank you!`
   );
 
@@ -258,6 +275,8 @@ async function rescheduleAppointmentInternal(
   serviceType: string,
   isAdmin: boolean
 ): Promise<{ success: boolean; notificationState: BookingNotificationState }> {
+  const safeClientName = escapeHtml(clientName);
+  const safeServiceType = escapeHtml(serviceType);
   const oldAvailabilityRef = doc(db, 'availability', oldDate);
   const newAvailabilityRef = doc(db, 'availability', newDate);
   const appointmentRef = doc(db, 'appointments', appointmentId);
@@ -324,7 +343,7 @@ async function rescheduleAppointmentInternal(
   const notificationState = await queueBookingMail(
     clientEmail,
     'Consultation Rescheduled - Aadhila M. Biswas',
-    `<p>Hi ${clientName},</p><p>Your <strong>${serviceType}</strong> consultation has been rescheduled to <strong>${newDate}</strong> at <strong>${newTimeSlot}</strong>.</p><p>Thank you!</p>`,
+    `<p>Hi ${safeClientName},</p><p>Your <strong>${safeServiceType}</strong> consultation has been rescheduled to <strong>${escapeHtml(newDate)}</strong> at <strong>${escapeHtml(newTimeSlot)}</strong>.</p><p>Thank you!</p>`,
     `Hi ${clientName},\n\nYour ${serviceType} consultation has been rescheduled to ${newDate} at ${newTimeSlot}.\n\nThank you!`
   );
 
