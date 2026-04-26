@@ -234,7 +234,7 @@ export default function AdminDashboard() {
     if (!composerState.serviceType.trim()) return toast.error('Enter the service type.');
     setIsBusy(true);
     try {
-      await bookConsultationAsAdmin({
+      const result = await bookConsultationAsAdmin({
         date: composerState.date,
         timeSlot: composerState.timeSlot,
         userId: composerState.clientId,
@@ -243,7 +243,11 @@ export default function AdminDashboard() {
         serviceType: composerState.serviceType.trim(),
         notes: composerState.notes.trim(),
       });
-      toast.success('Appointment created successfully');
+      toast.success(
+        result.notificationState === 'failed'
+          ? 'Appointment created. Confirmation email could not be queued, but the booking is saved.'
+          : 'Appointment created successfully'
+      );
       void logAudit(user.uid, user.email || 'unknown', 'CREATE_APPOINTMENT', `Created ${composerState.serviceType} for ${client.name || client.email}`);
       setComposerOpen(false);
       setComposerState(defaultComposerState());

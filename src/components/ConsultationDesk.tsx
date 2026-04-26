@@ -21,6 +21,7 @@ interface ConsultationDeskProps {
 }
 
 type Step = 'select' | 'confirm' | 'success';
+type NotificationState = 'queued' | 'failed' | 'skipped';
 
 function formatSlot(slot: string): string {
   try {
@@ -40,6 +41,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>('select');
+  const [notificationState, setNotificationState] = useState<NotificationState>('skipped');
   const [settings, setSettings] = useState<{ daysOff: number[] }>({ daysOff: [0, 6] });
   const [shouldResumeAfterAuth, setShouldResumeAfterAuth] = useState(false);
   const [availabilityNotice, setAvailabilityNotice] = useState('');
@@ -137,7 +139,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
 
     setIsSubmitting(true);
     try {
-      await bookConsultation(
+      const result = await bookConsultation(
         selectedDateKey,
         selectedSlot,
         user.uid,
@@ -146,6 +148,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
         serviceType || serviceTypes[0]?.value || 'Consultation',
         notes
       );
+      setNotificationState(result.notificationState);
       setStep('success');
       setNotes('');
     } catch (bookingError: any) {
@@ -158,6 +161,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
   const handleCloseModal = () => {
     if (step === 'success') {
       setSelectedSlot(null);
+      setNotificationState('skipped');
     }
     setStep('select');
   };
@@ -628,7 +632,9 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                     </div>
 
                     <p className="text-sm text-brand-text/54">
-                      {user?.email
+                      {notificationState === 'failed'
+                        ? 'Your session is saved. Email confirmation may take a little longer, but the booking is already visible in your client dashboard.'
+                        : user?.email
                         ? `${siteSettings.consultationDesk.modalEmailQueuedPrefix} ${user.email}.`
                         : siteSettings.consultationDesk.modalDashboardFallback}
                     </p>

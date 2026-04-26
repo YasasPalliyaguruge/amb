@@ -91,7 +91,7 @@ export default function RescheduleModal({ isOpen, onClose, appointment, userEmai
     setIsSubmitting(true);
     try {
       const newDateString = toStoredDate(selectedDate);
-      await rescheduleConsultation(
+      const result = await rescheduleConsultation(
         appointment.id,
         appointment.date,
         appointment.timeSlot,
@@ -102,7 +102,11 @@ export default function RescheduleModal({ isOpen, onClose, appointment, userEmai
         userEmail,
         appointment.serviceType
       );
-      toast.success('Consultation rescheduled successfully!');
+      toast.success(
+        result.notificationState === 'failed'
+          ? 'Consultation rescheduled. Email confirmation may take a little longer to arrive.'
+          : 'Consultation rescheduled successfully!'
+      );
       onClose();
     } catch (error: any) {
       toast.error(error.message || 'Failed to reschedule consultation');
