@@ -21,7 +21,7 @@ import {
   shouldDismissInitialBootLoader,
   type PublicStartupPhase,
 } from './components/cinematic/publicStartup';
-import { isMobileSplineViewport } from './components/cinematic/splineWarmup';
+import { isMobileSplineViewport, isPublicExperienceRoute } from './components/cinematic/splineWarmup';
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 
 const publicExperienceModulesPromise = Promise.all([
@@ -368,7 +368,12 @@ function MainPortfolio() {
           onSceneReady={handlePreloaderReady}
         />
       )}
-      <div className="public-site__content" aria-hidden={isPublicExperienceReady ? undefined : 'true'}>
+      <div
+        className="public-site__content"
+        aria-hidden={isPublicExperienceReady ? undefined : 'true'}
+        aria-busy={isPublicExperienceReady ? undefined : 'true'}
+        inert={isPublicExperienceReady ? undefined : true}
+      >
         <a href="#main-content" className="skip-link">
           {siteSettings.appCopy.skipLinkLabel}
         </a>
@@ -425,6 +430,7 @@ function AdminRoute() {
 function AppShell() {
   const { siteSettings } = useSiteSettings();
   const location = useLocation();
+  const isPublicRoute = isPublicExperienceRoute(location.pathname);
 
   useEffect(() => {
     document.title = siteSettings.branding.siteTitle;
@@ -440,9 +446,9 @@ function AppShell() {
 
   return (
     <>
-      <ScrollProgress />
+      {isPublicRoute && <ScrollProgress />}
       <ScrollToHash />
-      <CinematicBackdrop />
+      {isPublicRoute && <CinematicBackdrop />}
 
       <Toaster
         position="top-right"

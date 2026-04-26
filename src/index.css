@@ -93,6 +93,12 @@
     outline: 2px solid rgb(var(--theme-primary-rgb) / 0.58);
     outline-offset: 3px;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
 }
 
 @layer utilities {

@@ -9,6 +9,8 @@ let publicSplineWarmupPromise: Promise<PromiseSettledResult<unknown>[]> | null =
 const hasFetchSupport = () => typeof window !== 'undefined' && typeof window.fetch === 'function';
 export const isMobileSplineViewport = () =>
   typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+export const isPublicExperienceRoute = (pathname = typeof window !== 'undefined' ? window.location.pathname : '/') =>
+  pathname === '/';
 
 export function warmSplineScene(sceneUrl: string) {
   if (!sceneUrl || !hasFetchSupport()) {
