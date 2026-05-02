@@ -1,4 +1,4 @@
-import { useRef, type Key, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type Key, type PointerEvent, type ReactNode } from 'react';
 import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
@@ -18,6 +18,7 @@ export default function InteractivePlane({
 }: InteractivePlaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
+  const [hasFinePointer, setHasFinePointer] = useState(false);
   const { siteSettings } = useSiteSettings();
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
@@ -29,9 +30,19 @@ export default function InteractivePlane({
   const translateX = useTransform(springX, [-1, 1], [-tilt * 0.6, tilt * 0.6]);
   const translateY = useTransform(springY, [-1, 1], [-tilt * 0.45, tilt * 0.45]);
   const glow = useMotionTemplate`radial-gradient(circle at ${useTransform(springX, [-1, 1], ['20%', '80%'])} ${useTransform(springY, [-1, 1], ['20%', '80%'])}, rgb(var(--theme-accent-rgb) / 0.18), transparent 48%)`;
+  const canUsePointerEffects = !shouldReduceMotion && hasFinePointer;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const handleChange = () => setHasFinePointer(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (shouldReduceMotion || !containerRef.current) {
+    if (!canUsePointerEffects || !containerRef.current) {
       return;
     }
 
@@ -53,21 +64,21 @@ export default function InteractivePlane({
       onPointerMove={handlePointerMove}
       onPointerLeave={resetPointer}
       onPointerUp={resetPointer}
-      whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
+      whileTap={canUsePointerEffects ? { scale: 0.985 } : undefined}
       style={
-        shouldReduceMotion
-          ? undefined
-          : {
+        canUsePointerEffects
+          ? {
               rotateX,
               rotateY,
               x: translateX,
               y: translateY,
               transformStyle: 'preserve-3d',
             }
+          : undefined
       }
-      className={`relative will-change-transform ${className}`}
+      className={`relative ${canUsePointerEffects ? 'will-change-transform' : ''} ${className}`}
     >
-      {!shouldReduceMotion && (
+      {canUsePointerEffects && (
         <motion.div
           aria-hidden="true"
           className={`pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100 ${glowClassName}`}

@@ -214,7 +214,7 @@ export function resolveTheme(theme: ThemeState): ResolvedTheme {
   const inkText = ensureReadableText(ink, '#F8F6F1');
   const inkLine = lineBlend(ink, inkText, theme.controls.contrastMode);
   const inkMuted = inkMutedBlend(inkText, ink, theme.controls.contrastMode);
-  const radiusBase = 12 * theme.controls.radiusScale;
+  const radiusBase = 14 * theme.controls.radiusScale;
   const blur = theme.controls.surfaceMode === 'glass' ? 22 : theme.controls.surfaceMode === 'ink' ? 12 : 18;
   const shadowStrength = 0.08 + theme.controls.shadowDepth * 0.16;
 

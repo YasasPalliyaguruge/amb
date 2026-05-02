@@ -17,7 +17,6 @@ export default function Hero() {
         >
           <div className="hero-cardless-content">
             <div className="hero-cardless-copy">
-              <span className="display-pretitle">{siteSettings.hero.eyebrow}</span>
               <div className="hero-cardless-heading">
                 <div className="hero-cardless-identity">
                   <p className="caption-meta hero-cardless-name">{siteSettings.branding.practitionerName}</p>

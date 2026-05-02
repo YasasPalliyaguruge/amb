@@ -415,7 +415,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="admin-shell">
+    <div className={`admin-shell admin-shell--${activeTab}`}>
       <div className="admin-frame">
         <section className="admin-hero">
           <div className="space-y-3">
@@ -438,7 +438,7 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="admin-summary-grid grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <MetricCard label="Appointments" value={totalAppointments} />
           <MetricCard label="Scheduled" value={scheduledCount} tone="positive" />
           <MetricCard label="Completed" value={completedCount} tone="accent" />
