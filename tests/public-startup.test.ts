@@ -9,9 +9,11 @@ describe('public startup helpers', () => {
   it('keeps the experience blocked until both spline gates or safety timers resolve', () => {
     expect(
       isPublicExperiencePrepared({
+        areSiteSettingsReady: true,
         arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: false,
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: false,
         isSplineBackgroundReady: true,
@@ -21,15 +23,47 @@ describe('public startup helpers', () => {
 
     expect(
       isPublicExperiencePrepared({
+        areSiteSettingsReady: true,
         arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: false,
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: true,
         isSplineBackgroundReady: false,
         hasMainSplineSafetyElapsed: true,
       })
     ).toBe(true);
+
+    expect(
+      isPublicExperiencePrepared({
+        areSiteSettingsReady: true,
+        arePublicSectionsReady: true,
+        arePublicAssetsReady: true,
+        hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: true,
+        isPreloaderSplineReady: false,
+        hasLoaderSafetyElapsed: true,
+        isSplineBackgroundReady: false,
+        hasMainSplineSafetyElapsed: true,
+      })
+    ).toBe(true);
+  });
+
+  it('keeps the public page hidden until live site settings resolve', () => {
+    expect(
+      isPublicExperiencePrepared({
+        areSiteSettingsReady: false,
+        arePublicSectionsReady: true,
+        arePublicAssetsReady: true,
+        hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: true,
+        isPreloaderSplineReady: true,
+        hasLoaderSafetyElapsed: false,
+        isSplineBackgroundReady: true,
+        hasMainSplineSafetyElapsed: false,
+      })
+    ).toBe(false);
   });
 
   it('maps each startup phase to the correct visibility flags', () => {
@@ -46,7 +80,7 @@ describe('public startup helpers', () => {
       isPublicExperienceVisible: false,
       shouldRenderPreloader: true,
       shouldHidePreloaderScene: true,
-      shouldFadePreloaderLayer: false,
+      shouldFadePreloaderLayer: true,
     });
 
     expect(getPublicStartupUiState('site-entering')).toEqual({

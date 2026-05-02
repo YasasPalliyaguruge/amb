@@ -24,6 +24,14 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+export function resolveVisitorTheme(
+  siteTheme: ThemeState,
+  visitorOverride: ThemeState | null,
+  themeStudioEnabled: boolean
+) {
+  return sanitizeThemeState(themeStudioEnabled && visitorOverride ? visitorOverride : siteTheme, themePresets);
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { siteSettings } = useSiteSettings();
   const [visitorOverride, setVisitorOverride] = useState<ThemeState | null>(() =>
@@ -52,8 +60,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [siteSettings.themeStudioEnabled, visitorOverride]);
 
   const theme = useMemo(
-    () => sanitizeThemeState(visitorOverride ?? siteSettings.theme, themePresets),
-    [siteSettings.theme, visitorOverride]
+    () => resolveVisitorTheme(siteSettings.theme, visitorOverride, siteSettings.themeStudioEnabled),
+    [siteSettings.theme, siteSettings.themeStudioEnabled, visitorOverride]
   );
 
   const resolvedTheme = useMemo(() => resolveTheme(theme), [theme]);
@@ -84,7 +92,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     resolvedTheme,
     presets: themePresets,
     themeStudioEnabled: siteSettings.themeStudioEnabled,
-    isUsingLiveSiteTheme: visitorOverride == null,
+    isUsingLiveSiteTheme: !siteSettings.themeStudioEnabled || visitorOverride == null,
     setPreset: (presetId) => {
       const preset = themePresets.find((entry) => entry.id === presetId) || defaultThemePreset;
       setVisitorOverride(createThemeState(preset));

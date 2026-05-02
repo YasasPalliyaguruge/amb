@@ -1,10 +1,7 @@
-import { memo, useCallback } from 'react';
-import SplineScene from './SplineScene';
+import { memo, useCallback, useState } from 'react';
 import type { Application } from '@splinetool/runtime';
+import SplineScene from './SplineScene';
 import { PUBLIC_LOADING_SPLINE_SCENE } from './splineWarmup';
-
-const LOADING_SPLINE_BACKDROP_ID = '6083c9f1-1e5b-4f8d-bb61-89e24484a04d';
-const LOADING_SPLINE_BACKDROP_NAMES = ['Rectangle 2', 'Rectangle', 'Background', 'Backdrop'];
 
 type PublicSplinePreloaderProps = {
   isLeaving: boolean;
@@ -12,45 +9,24 @@ type PublicSplinePreloaderProps = {
   onSceneReady?: () => void;
 };
 
-function findBackdrop(app: Application) {
-  try {
-    const backdropById = app.findObjectById?.(LOADING_SPLINE_BACKDROP_ID);
-    if (backdropById) {
-      return backdropById;
-    }
-
-    for (const name of LOADING_SPLINE_BACKDROP_NAMES) {
-      const backdropByName = app.findObjectByName?.(name);
-      if (backdropByName) {
-        return backdropByName;
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
 export default memo(function PublicSplinePreloader({ isLeaving, isSceneHidden, onSceneReady }: PublicSplinePreloaderProps) {
+  const [isCoffeeSceneReady, setIsCoffeeSceneReady] = useState(false);
+
   const handleSceneReady = useCallback((app: Application) => {
-    const backdrop = findBackdrop(app);
-
-    if (backdrop) {
-      backdrop.visible = false;
-      app.requestRender();
-    }
-
+    app.requestRender();
+    window.requestAnimationFrame(() => app.requestRender());
+    setIsCoffeeSceneReady(true);
     onSceneReady?.();
   }, [onSceneReady]);
 
   const handleSceneError = useCallback(() => {
+    setIsCoffeeSceneReady(false);
     onSceneReady?.();
   }, [onSceneReady]);
 
   return (
     <div
-      className={`public-spline-preloader ${isSceneHidden ? 'public-spline-preloader--scene-hidden' : ''} ${isLeaving ? 'public-spline-preloader--leaving' : ''}`}
+      className={`public-spline-preloader ${isCoffeeSceneReady ? 'public-spline-preloader--coffee-ready' : ''} ${isSceneHidden ? 'public-spline-preloader--scene-hidden' : ''} ${isLeaving ? 'public-spline-preloader--leaving' : ''}`}
       role="status"
       aria-label="Loading website"
     >
@@ -58,6 +34,7 @@ export default memo(function PublicSplinePreloader({ isLeaving, isSceneHidden, o
         scene={PUBLIC_LOADING_SPLINE_SCENE}
         className="public-spline-preloader__scene"
         decorative
+        warmBeforeRender={false}
         onLoad={handleSceneReady}
         onError={handleSceneError}
       />

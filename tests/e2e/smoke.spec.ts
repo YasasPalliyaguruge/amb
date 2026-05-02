@@ -41,7 +41,7 @@ test('sign-in modal opens and closes with Escape', async ({ page }) => {
 test('book navigation reaches the consultation desk section', async ({ page }) => {
   await page.goto('/');
   await waitForPublicSite(page);
-  await page.getByRole('navigation').getByRole('link', { name: /^Book$/ }).click();
+  await page.getByRole('navigation').locator('a[href="/#consultation-desk"]').click();
   await expect(page).toHaveURL(/#consultation-desk/);
 
   await expect

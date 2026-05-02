@@ -36,6 +36,20 @@ const items: WebsiteSearchItem[] = [
     kind: 'field',
   },
   {
+    id: 'theme-preset',
+    sectionId: 'website-theme',
+    sectionTitle: 'Theme and Motion',
+    groupId: 'theme-baseline',
+    groupTitle: 'Default visitor theme',
+    label: 'Default visitor theme',
+    description: 'Choose the theme new visitors see before they make a personal style choice.',
+    valueText: 'Ink Gallery Noir A charcoal-and-ivory gallery with soft cyan lift.',
+    aliases: ['preset', 'theme default', 'default color', 'first visit theme', 'shipped theme', 'global theme'],
+    breadcrumbs: ['Theme and Motion', 'Default visitor theme', 'Default visitor theme'],
+    anchorId: 'theme-preset',
+    kind: 'field',
+  },
+  {
     id: 'footer-instagram',
     sectionId: 'website-footer',
     sectionTitle: 'Footer',
@@ -84,6 +98,11 @@ describe('website settings search', () => {
   it('finds fields through synonyms and aliases', () => {
     const results = searchWebsiteSettings(items, 'patient label');
     expect(results[0]?.id).toBe('booking-modal-client');
+  });
+
+  it('finds the admin default theme through first-visit color language', () => {
+    const results = searchWebsiteSettings(items, 'first visit color');
+    expect(results[0]?.id).toBe('theme-preset');
   });
 
   it('finds list and row-like items through value content', () => {

@@ -5,6 +5,8 @@ import {
   siteSettingsSchemaVersion,
   type SiteSettings,
 } from '../src/siteSettings/siteSettings';
+import { themePresets } from '../src/theme/themePresets';
+import { createThemeState, sanitizeThemeState } from '../src/theme/themeUtils';
 
 describe('site settings sanitizer', () => {
   it('merges old saved website settings with new editable defaults', () => {
@@ -67,6 +69,21 @@ describe('site settings sanitizer', () => {
     expect(sanitized.consultationDesk.serviceTypes).toEqual([
       { value: 'Custom Service', label: 'Custom Service', icon: 'CS', desc: 'Valid service.' },
     ]);
+  });
+
+  it('preserves the admin-selected default visitor theme during schema upgrades', () => {
+    const selectedPreset = themePresets.find((preset) => preset.id === 'ink-gallery')!;
+    const legacySettings = {
+      ...defaultSiteSettings,
+      schemaVersion: 4,
+      theme: createThemeState(selectedPreset),
+    };
+
+    const sanitized = sanitizeSiteSettings(legacySettings);
+
+    expect(sanitized.schemaVersion).toBe(siteSettingsSchemaVersion);
+    expect(sanitized.theme.presetId).toBe('ink-gallery');
+    expect(sanitized.theme.colors).toEqual(sanitizeThemeState(createThemeState(selectedPreset), themePresets).colors);
   });
 
   it('upgrades legacy patient wording while preserving custom content', () => {

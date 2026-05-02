@@ -262,7 +262,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 32, stiffness: 300 }}
-              className="theme-panel fixed bottom-3 right-3 top-3 z-40 flex w-[min(23rem,calc(100%-1.5rem))] flex-col lg:hidden"
+              className="theme-panel fixed bottom-3 right-3 top-3 z-40 flex w-[calc(100vw_-_1.5rem)] max-w-[23rem] flex-col lg:hidden"
             >
               <div className="flex items-center justify-between border-b border-[rgb(var(--theme-line-rgb)/0.24)] p-6">
                 <a

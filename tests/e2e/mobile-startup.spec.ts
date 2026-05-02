@@ -126,7 +126,7 @@ test('mobile startup keeps the intro to the AMB preparing screen and never mount
     window.__mobileSplineProbe = seen;
   });
 
-  const response = await page.goto('/');
+  const response = await page.goto('/', { waitUntil: 'domcontentloaded' });
   const html = await response?.text();
 
   expect(html).toContain('id="initial-boot-loader"');
@@ -161,7 +161,7 @@ test('mobile text stays readable in dark and light theme overrides', async ({ pa
     );
   }, { overrideTheme: darkTheme, resolvedTheme: resolvedDarkTheme });
 
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await waitForPublicSite(page);
 
   await expectTextUsesThemeVar(page, '.display-hero', '--theme-text-rgb', 0.95);

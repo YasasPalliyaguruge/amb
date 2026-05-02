@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { resolveVisitorTheme } from '../src/contexts/ThemeContext';
 import { defaultThemePreset, themePresets } from '../src/theme/themePresets';
 import { createThemeState, resolveTheme, sanitizeThemeState } from '../src/theme/themeUtils';
 
@@ -122,5 +123,20 @@ describe('theme utilities', () => {
     expect(inkContrast).toBeGreaterThanOrEqual(4.5);
     expect(resolved.cssVars['--theme-ink-muted-rgb']).toMatch(/^\d+ \d+ \d+$/);
     expect(resolved.cssVars['--theme-ink-line-rgb']).toMatch(/^\d+ \d+ \d+$/);
+  });
+
+  it('uses the admin-selected site theme when a visitor has not chosen a personal theme', () => {
+    const siteTheme = createThemeState(themePresets.find((preset) => preset.id === 'ink-gallery')!);
+    const resolved = resolveVisitorTheme(siteTheme, null, true);
+
+    expect(resolved.presetId).toBe('ink-gallery');
+  });
+
+  it('lets visitors override the site theme only while the public style dock is enabled', () => {
+    const siteTheme = createThemeState(themePresets.find((preset) => preset.id === 'ink-gallery')!);
+    const visitorTheme = createThemeState(themePresets.find((preset) => preset.id === 'sea-glass')!);
+
+    expect(resolveVisitorTheme(siteTheme, visitorTheme, true).presetId).toBe('sea-glass');
+    expect(resolveVisitorTheme(siteTheme, visitorTheme, false).presetId).toBe('ink-gallery');
   });
 });

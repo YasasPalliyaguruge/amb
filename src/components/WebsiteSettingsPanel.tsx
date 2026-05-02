@@ -62,7 +62,7 @@ type SearchableFieldGroup = {
 
 const surfaceModes: ThemeControls['surfaceMode'][] = ['paper', 'glass', 'velvet', 'ink', 'glow'];
 const contrastModes: ThemeControls['contrastMode'][] = ['soft', 'balanced', 'high'];
-const quickSearchSuggestions = ['hero', 'booking', 'instagram', 'client', 'footer', 'calendar'];
+const quickSearchSuggestions = ['hero', 'booking', 'default theme', 'instagram', 'client', 'footer', 'calendar'];
 const textCardFields: StructuredFieldConfig<SiteTextCard>[] = [
   { key: 'title', label: 'Title' },
   { key: 'description', label: 'Description', type: 'textarea', rows: 3 },
@@ -332,8 +332,8 @@ const themeSection: SearchableSection = {
   id: 'website-theme',
   label: 'Theme',
   title: 'Theme and Motion',
-  description: 'Set the live default theme, motion scenes, and visitor theme dock behavior.',
-  aliases: ['color', 'motion', 'background'],
+  description: 'Set the first-visit default theme, motion scenes, and visitor theme dock behavior.',
+  aliases: ['color', 'motion', 'background', 'default visitor theme'],
 };
 const heroProfileSection: SearchableSection = {
   id: 'website-hero-profile',
@@ -711,9 +711,9 @@ const contactGroup: SearchableFieldGroup = {
 };
 const themeBaselineGroup: SearchableFieldGroup = {
   id: 'theme-baseline',
-  title: 'Theme baseline',
-  description: 'Set the visible theme preset and whether visitors can use the theme dock.',
-  aliases: ['preset', 'theme dock'],
+  title: 'Default visitor theme',
+  description: 'Choose the theme new visitors see before they make a personal style choice.',
+  aliases: ['preset', 'theme dock', 'default color', 'first visit theme'],
 };
 const motionScenesGroup: SearchableFieldGroup = {
   id: 'motion-scenes',
@@ -781,6 +781,16 @@ const footerDetailsGroup: SearchableFieldGroup = {
   description: 'Supporting summary, affiliation, ethics line, and organization links.',
   aliases: ['instagram', 'copyright', 'organization'],
 };
+
+function ThemeSwatchStrip({ colors }: { colors: string[] }) {
+  return (
+    <div className="website-theme-swatch-strip" aria-hidden="true">
+      {colors.map((color) => (
+        <span key={color} style={{ backgroundColor: color }} />
+      ))}
+    </div>
+  );
+}
 
 export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSettingsPanelProps) {
   const { siteSettings, loading, error } = useSiteSettings();
@@ -910,7 +920,7 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
   const settingsNavItems = [
     { ...structureSection, description: `${visibleSectionCount} visible sections` },
     { ...brandingSection, description: draft.branding.wordmark },
-    { ...themeSection, description: currentPreset.label },
+    { ...themeSection, description: `Default: ${currentPreset.label}` },
     { ...heroProfileSection, description: 'First impression copy' },
     { ...practiceSection, description: 'Services and credentials' },
     { ...artBookingSection, description: 'Visual and booking copy' },
@@ -1105,11 +1115,11 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
         sectionTitle: themeSection.label,
         groupId: themeBaselineGroup.id,
         groupTitle: themeBaselineGroup.title,
-        label: 'Theme preset',
+        label: 'Default visitor theme',
         description: themeBaselineGroup.description,
-        valueText: currentPreset.label,
-        aliases: ['preset', 'theme default'],
-        breadcrumbs: [themeSection.label, themeBaselineGroup.title, 'Theme preset'],
+        valueText: `${currentPreset.label} ${currentPreset.family} ${currentPreset.description}`,
+        aliases: ['preset', 'theme default', 'default color', 'first visit theme', 'shipped theme', 'global theme'],
+        breadcrumbs: [themeSection.label, themeBaselineGroup.title, 'Default visitor theme'],
         anchorId: getFieldAnchorId(themeSection.id, themeBaselineGroup.id, 'presetId'),
         kind: 'field',
       },
@@ -1531,21 +1541,54 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
             anchorId={getGroupAnchorId(themeSection.id, themeBaselineGroup.id)}
             isHighlighted={highlightedAnchorId === getGroupAnchorId(themeSection.id, themeBaselineGroup.id)}
           >
+            <div
+              className={`website-default-theme-card website-search-anchor${highlightedAnchorId === getFieldAnchorId(themeSection.id, themeBaselineGroup.id, 'presetId') ? ' website-search-anchor--active' : ''}`}
+              data-search-anchor={getFieldAnchorId(themeSection.id, themeBaselineGroup.id, 'presetId')}
+            >
+              <div className="website-default-theme-card__copy">
+                <span className="website-default-theme-card__icon">
+                  <Paintbrush2 className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="website-default-theme-card__eyebrow">Default for new visitors</p>
+                  <h4 className="website-default-theme-card__title">{currentPreset.label}</h4>
+                  <p className="website-default-theme-card__description">
+                    This is the color theme visitors see when they have not chosen their own style yet. Their personal Style Dock choice stays on their device.
+                  </p>
+                </div>
+              </div>
+              <div className="website-default-theme-card__controls">
+                <ThemeSwatchStrip
+                  colors={[
+                    draft.theme.colors.background,
+                    draft.theme.colors.primary,
+                    draft.theme.colors.accent,
+                    draft.theme.colors.text,
+                  ]}
+                />
+                <label className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgb(var(--theme-muted-rgb))]">Default visitor theme</span>
+                  <select
+                    value={draft.theme.presetId}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        theme: createThemeState(themePresets.find((preset) => preset.id === event.target.value) || themePresets[0]),
+                      }))
+                    }
+                    className="theme-select"
+                  >
+                    {themePresets.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
+                  </select>
+                </label>
+              </div>
+            </div>
             <label
               className={`inline-flex items-center gap-3 rounded-full border border-[rgb(var(--theme-line-rgb)/0.25)] px-4 py-2 text-sm website-search-anchor${highlightedAnchorId === getFieldAnchorId(themeSection.id, themeBaselineGroup.id, 'themeStudioEnabled') ? ' website-search-anchor--active' : ''}`}
               data-search-anchor={getFieldAnchorId(themeSection.id, themeBaselineGroup.id, 'themeStudioEnabled')}
             >
               <input type="checkbox" checked={draft.themeStudioEnabled} onChange={(event) => setDraft((current) => ({ ...current, themeStudioEnabled: event.target.checked }))} className="h-4 w-4 accent-[rgb(var(--theme-primary-rgb))]" />
               Keep visitor theme dock visible
-            </label>
-            <label
-              className={`space-y-2 website-search-anchor${highlightedAnchorId === getFieldAnchorId(themeSection.id, themeBaselineGroup.id, 'presetId') ? ' website-search-anchor--active' : ''}`}
-              data-search-anchor={getFieldAnchorId(themeSection.id, themeBaselineGroup.id, 'presetId')}
-            >
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgb(var(--theme-muted-rgb))]">Theme preset</span>
-              <select value={draft.theme.presetId} onChange={(event) => setDraft((current) => ({ ...current, theme: createThemeState(themePresets.find((preset) => preset.id === event.target.value) || themePresets[0]) }))} className="theme-select">
-                {themePresets.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
-              </select>
             </label>
           </FieldGroup>
           <FieldGroup

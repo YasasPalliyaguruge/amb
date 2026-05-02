@@ -214,7 +214,7 @@ export function resolveTheme(theme: ThemeState): ResolvedTheme {
   const inkText = ensureReadableText(ink, '#F8F6F1');
   const inkLine = lineBlend(ink, inkText, theme.controls.contrastMode);
   const inkMuted = inkMutedBlend(inkText, ink, theme.controls.contrastMode);
-  const radiusBase = 10 * theme.controls.radiusScale;
+  const radiusBase = 12 * theme.controls.radiusScale;
   const blur = theme.controls.surfaceMode === 'glass' ? 22 : theme.controls.surfaceMode === 'ink' ? 12 : 18;
   const shadowStrength = 0.08 + theme.controls.shadowDepth * 0.16;
 
@@ -244,8 +244,8 @@ export function resolveTheme(theme: ThemeState): ResolvedTheme {
       '--theme-line-rgb': rgbString(line),
       '--theme-muted-rgb': rgbString(muted),
       '--theme-radius-md': `${radiusBase}px`,
-      '--theme-radius-lg': `${radiusBase * 1.35}px`,
-      '--theme-radius-xl': `${radiusBase * 1.7}px`,
+      '--theme-radius-lg': `${radiusBase * 1.48}px`,
+      '--theme-radius-xl': `${radiusBase * 2}px`,
       '--theme-blur': `${blur}px`,
       '--theme-shadow-alpha': `${shadowStrength}`,
       '--theme-grain-opacity': `${theme.controls.grainIntensity}`,

@@ -176,7 +176,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
               <button
                 ref={closeButtonRef}
+                type="button"
                 onClick={onClose}
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                  onClose();
+                }}
                 className="absolute right-5 top-5 rounded-full border border-[rgb(var(--theme-line-rgb)/0.25)] bg-[rgb(var(--theme-surface-rgb)/0.84)] p-2 text-[rgb(var(--theme-text-rgb)/0.84)] transition hover:text-[rgb(var(--theme-text-rgb))]"
                 aria-label={copy.closeAriaLabel}
               >

@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Application } from '@splinetool/runtime';
 import { splineRuntimeWarmupPromise, warmSplineScene } from './splineWarmup';
 
@@ -9,15 +9,74 @@ type SplineSceneProps = {
   className?: string;
   decorative?: boolean;
   transparentBackground?: boolean;
+  warmBeforeRender?: boolean;
+  prepareBeforeReveal?: (app: Application) => void;
   onLoad?: (app: Application) => void;
   onError?: (error: unknown) => void;
 };
+
+type TransparentRendererApp = Application & {
+  renderer?: {
+    setClearAlpha?: (alpha: number) => void;
+    setClearColor?: (color: string | number, alpha?: number) => void;
+  };
+};
+
+type SplineSceneErrorBoundaryProps = {
+  children: ReactNode;
+  onError?: (error: unknown) => void;
+};
+
+type SplineSceneErrorBoundaryState = {
+  hasError: boolean;
+};
+
+class SplineSceneErrorBoundary extends React.Component<SplineSceneErrorBoundaryProps, SplineSceneErrorBoundaryState> {
+  declare props: Readonly<SplineSceneErrorBoundaryProps>;
+  state: SplineSceneErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    this.props.onError?.(error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
+    return this.props.children;
+  }
+}
+
+function makeSplineCanvasTransparent(app: Application) {
+  const transparentApp = app as TransparentRendererApp;
+  app.setBackgroundColor('rgba(0, 0, 0, 0)');
+  transparentApp.renderer?.setClearAlpha?.(0);
+  transparentApp.renderer?.setClearColor?.(0x000000, 0);
+  app.canvas.style.background = 'transparent';
+  app.canvas.style.backgroundColor = 'transparent';
+  app.canvas.parentElement?.style.setProperty('background', 'transparent');
+  app.requestRender();
+  window.requestAnimationFrame(() => app.requestRender());
+}
+
+function afterTransparentRepaint(callback: () => void) {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(callback);
+  });
+}
 
 function SplineScene({
   scene,
   className = '',
   decorative = true,
   transparentBackground = true,
+  warmBeforeRender = true,
+  prepareBeforeReveal,
   onLoad,
   onError,
 }: SplineSceneProps) {
@@ -33,6 +92,11 @@ function SplineScene({
     setCanRenderScene(false);
 
     if (!scene?.trim()) {
+      return;
+    }
+
+    if (!warmBeforeRender) {
+      setCanRenderScene(true);
       return;
     }
 
@@ -57,23 +121,35 @@ function SplineScene({
     return () => {
       isActive = false;
     };
-  }, [onError, scene]);
+  }, [onError, scene, warmBeforeRender]);
 
   const handleLoad = useCallback(
     (app: Application) => {
-      if (transparentBackground) {
-        app.setBackgroundColor('rgba(0, 0, 0, 0)');
-        app.canvas.style.background = 'transparent';
-        app.requestRender();
+      if (hasHandledLoadRef.current) {
+        return;
       }
 
-      if (!hasHandledLoadRef.current) {
-        hasHandledLoadRef.current = true;
+      hasHandledLoadRef.current = true;
+
+      if (transparentBackground) {
+        makeSplineCanvasTransparent(app);
+      }
+
+      prepareBeforeReveal?.(app);
+
+      const revealScene = () => {
         setIsLoaded(true);
         onLoad?.(app);
+      };
+
+      if (transparentBackground) {
+        afterTransparentRepaint(revealScene);
+        return;
       }
+
+      revealScene();
     },
-    [onLoad, transparentBackground]
+    [onLoad, prepareBeforeReveal, transparentBackground]
   );
 
   if (!scene?.trim() || !canRenderScene) {
@@ -82,13 +158,15 @@ function SplineScene({
 
   return (
     <div className={`spline-scene ${className}`} aria-hidden={decorative ? 'true' : undefined}>
-      <Suspense fallback={null}>
-        <Spline
-          scene={scene}
-          onLoad={handleLoad}
-          className={`spline-scene__canvas ${isLoaded ? 'spline-scene__canvas--loaded' : ''}`}
-        />
-      </Suspense>
+      <SplineSceneErrorBoundary onError={onError}>
+        <Suspense fallback={null}>
+          <Spline
+            scene={scene}
+            onLoad={handleLoad}
+            className={`spline-scene__canvas ${isLoaded ? 'spline-scene__canvas--loaded' : ''}`}
+          />
+        </Suspense>
+      </SplineSceneErrorBoundary>
     </div>
   );
 }

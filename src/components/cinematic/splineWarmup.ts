@@ -1,5 +1,5 @@
-export const PUBLIC_LOADING_SPLINE_SCENE = 'https://prod.spline.design/fi4kVao3vk5K2oVj/scene.splinecode';
-export const PUBLIC_BACKGROUND_SPLINE_SCENE = 'https://prod.spline.design/mk2OfkXd-CKewFlt/scene.splinecode';
+export const PUBLIC_LOADING_SPLINE_SCENE = '/spline/coffee-loader-clean.splinecode?v=20260427c';
+export const PUBLIC_BACKGROUND_SPLINE_SCENE = '/spline/flower-bee-background-clean.splinecode?v=20260427b';
 
 export const splineRuntimeWarmupPromise = import('@splinetool/react-spline');
 

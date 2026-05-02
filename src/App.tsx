@@ -17,6 +17,7 @@ import {
   PUBLIC_LOADER_SCENE_SAFETY_MS,
   PUBLIC_MAIN_SCENE_SAFETY_MS,
   PUBLIC_MINIMUM_LOADER_MS,
+  PUBLIC_COFFEE_LOADER_VISIBLE_MS,
   PUBLIC_SITE_HANDOFF_MS,
   shouldDismissInitialBootLoader,
   type PublicStartupPhase,
@@ -188,13 +189,18 @@ function MainPortfolio() {
   const [arePublicSectionsReady, setArePublicSectionsReady] = useState(false);
   const [arePublicAssetsReady, setArePublicAssetsReady] = useState(false);
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
+  const [hasCoffeeLoaderVisibleTimeElapsed, setHasCoffeeLoaderVisibleTimeElapsed] = useState(false);
   const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
   const [hasMainSplineSafetyElapsed, setHasMainSplineSafetyElapsed] = useState(false);
   const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
-  const { siteSettings } = useSiteSettings();
+  const { siteSettings, loading: siteSettingsLoading } = useSiteSettings();
   const shouldUseSplinePreloader = !isMobileViewport;
+  const effectivePublicSectionsReady = isMobileViewport ? true : arePublicSectionsReady;
+  const effectivePublicAssetsReady = isMobileViewport ? true : arePublicAssetsReady;
   const effectivePreloaderReady = shouldUseSplinePreloader ? isPreloaderSplineReady : true;
   const effectiveLoaderSafetyElapsed = shouldUseSplinePreloader ? hasLoaderSafetyElapsed : true;
+  const effectiveSplineBackgroundReady = isMobileViewport ? true : isSplineBackgroundReady;
+  const effectiveMainSplineSafetyElapsed = isMobileViewport ? true : hasMainSplineSafetyElapsed;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -208,22 +214,26 @@ function MainPortfolio() {
   const publicExperiencePrepared = useMemo(
     () =>
       isPublicExperiencePrepared({
-        arePublicSectionsReady,
-        arePublicAssetsReady,
+        areSiteSettingsReady: !siteSettingsLoading,
+        arePublicSectionsReady: effectivePublicSectionsReady,
+        arePublicAssetsReady: effectivePublicAssetsReady,
         hasMinimumLoaderTimeElapsed,
+        hasCoffeeLoaderVisibleTimeElapsed,
         isPreloaderSplineReady: effectivePreloaderReady,
         hasLoaderSafetyElapsed: effectiveLoaderSafetyElapsed,
-        isSplineBackgroundReady,
-        hasMainSplineSafetyElapsed,
+        isSplineBackgroundReady: effectiveSplineBackgroundReady,
+        hasMainSplineSafetyElapsed: effectiveMainSplineSafetyElapsed,
       }),
     [
-      arePublicSectionsReady,
-      arePublicAssetsReady,
+      effectivePublicSectionsReady,
+      effectivePublicAssetsReady,
+      siteSettingsLoading,
       hasMinimumLoaderTimeElapsed,
+      hasCoffeeLoaderVisibleTimeElapsed,
       effectivePreloaderReady,
       effectiveLoaderSafetyElapsed,
-      isSplineBackgroundReady,
-      hasMainSplineSafetyElapsed,
+      effectiveSplineBackgroundReady,
+      effectiveMainSplineSafetyElapsed,
     ]
   );
 
@@ -269,7 +279,7 @@ function MainPortfolio() {
   }, []);
 
   useEffect(() => {
-    const minimumLoaderDelay = isMobileViewport ? 950 : PUBLIC_MINIMUM_LOADER_MS;
+    const minimumLoaderDelay = isMobileViewport ? 720 : PUBLIC_MINIMUM_LOADER_MS;
     const mainSplineSafetyDelay = isMobileViewport ? 12000 : PUBLIC_MAIN_SCENE_SAFETY_MS;
     const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), minimumLoaderDelay);
     // Avoid blocking on the decorative loader scene if its external request stalls.
@@ -283,6 +293,25 @@ function MainPortfolio() {
       window.clearTimeout(mainSplineSafetyTimer);
     };
   }, [isMobileViewport]);
+
+  useEffect(() => {
+    if (!effectivePreloaderReady) {
+      setHasCoffeeLoaderVisibleTimeElapsed(false);
+      return;
+    }
+
+    if (!shouldUseSplinePreloader) {
+      setHasCoffeeLoaderVisibleTimeElapsed(true);
+      return;
+    }
+
+    const coffeeVisibleTimer = window.setTimeout(
+      () => setHasCoffeeLoaderVisibleTimeElapsed(true),
+      PUBLIC_COFFEE_LOADER_VISIBLE_MS
+    );
+
+    return () => window.clearTimeout(coffeeVisibleTimer);
+  }, [effectivePreloaderReady, shouldUseSplinePreloader]);
 
   useEffect(() => {
     document.body.classList.toggle('public-site-loading', startupPhase !== 'ready');
@@ -305,8 +334,8 @@ function MainPortfolio() {
       return;
     }
 
-    setStartupPhase('loader-exiting');
-  }, [publicExperiencePrepared, startupPhase]);
+    setStartupPhase(isMobileViewport ? 'ready' : 'loader-exiting');
+  }, [isMobileViewport, publicExperiencePrepared, startupPhase]);
 
   useEffect(() => {
     if (startupPhase !== 'loader-exiting') {
