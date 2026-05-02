@@ -2283,7 +2283,7 @@
     opacity: 1;
     filter: saturate(1.03) contrast(1) brightness(1.03);
     mix-blend-mode: normal;
-    transform: scale(1.42) translate(13vw, 24vh);
+    transform: scale(1.42) translate(13vw, 26vh);
   }
 
   .public-spline-background__veil {
@@ -2346,7 +2346,7 @@
     gap: clamp(0.95rem, 1.65vw, 1.28rem);
     width: min(100%, 47.5rem);
     padding-left: clamp(0.75rem, 1.4vw, 1.35rem);
-    transform: translateY(clamp(-0.55rem, -1.1vh, -0.05rem));
+    transform: translateY(clamp(0.35rem, 2.2vh, 1.55rem));
   }
 
   .hero-cardless-copy {
@@ -3997,7 +3997,7 @@
   }
 
   .public-spline-background--hero .public-spline-background__scene {
-    transform: scale(1.24) translate(14vw, 18vh);
+    transform: scale(1.24) translate(14vw, 19.5vh);
   }
 
   .section-shell--hero {
@@ -4019,6 +4019,7 @@
   .hero-cardless-content {
     width: min(100%, 41.5rem);
     gap: 1.15rem;
+    transform: translateY(clamp(0.2rem, 1.2vh, 0.9rem));
   }
 
   .hero-cardless .display-hero {
@@ -4136,7 +4137,7 @@
 
   .hero-cardless-frame {
     min-height: calc(100svh - 5.9rem);
-    padding-top: 0.9rem;
+    padding-top: 2.15rem;
     padding-bottom: 1.55rem;
   }
 

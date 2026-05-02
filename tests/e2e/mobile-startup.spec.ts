@@ -111,7 +111,7 @@ const expectTextUsesThemeVar = async (
   expect(Number.parseFloat(alpha)).toBeGreaterThanOrEqual(minimumAlpha);
 };
 
-test('mobile startup keeps the intro to the AMB preparing screen and never mounts the spline preloader', async ({ page }) => {
+test('mobile startup keeps the intro to the AMB boot screen and never mounts the spline preloader', async ({ page }) => {
   await page.addInitScript(() => {
     const seen = { preloaderMounted: false };
 
@@ -130,7 +130,8 @@ test('mobile startup keeps the intro to the AMB preparing screen and never mount
   const html = await response?.text();
 
   expect(html).toContain('id="initial-boot-loader"');
-  expect(html).toContain('Preparing the experience');
+  expect(html).toContain('boot-loader__brand">AMB');
+  expect(html).not.toContain('Preparing the experience');
   await expect(page.locator('.public-spline-preloader')).toHaveCount(0);
   await waitForPublicSite(page);
   await expect(page.locator('.public-spline-preloader')).toHaveCount(0);
