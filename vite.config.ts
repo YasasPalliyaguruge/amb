@@ -9,6 +9,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes('vite/preload-helper')) return 'vite-preload-helper';
           if (!id.includes('node_modules')) return undefined;
           const normalizedId = id.replace(/\\/g, '/');
           if (normalizedId.includes('@splinetool')) return 'spline-vendor';

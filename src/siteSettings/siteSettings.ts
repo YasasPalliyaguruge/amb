@@ -480,11 +480,11 @@ export const defaultSiteSettings: SiteSettings = {
     secondaryCtaHref: '/#consultation-desk',
     badges: ['CAFS Sri Lanka', 'B.Sc. Psychology and Counseling', 'University of Colombo PGD'],
     mediaAlt: 'Portrait and visual identity for Aadhila M. Biswas',
-    mediaEyebrow: 'Professional identity',
+    mediaEyebrow: 'About the practice',
     mediaHeadline: 'Counselor, behavior therapist, and educator.',
-    mediaBadge: 'Calm / clear / private',
-    supportingFrameAltPrefix: 'Selected practice frame',
-    supportingFrameBadgePrefix: 'Frame',
+    mediaBadge: 'Professional Care',
+    supportingFrameAltPrefix: 'Gallery image',
+    supportingFrameBadgePrefix: 'Gallery',
     supportNote:
       'Start with the profile if you want to understand the approach first, or go directly to the consultation desk when you are ready to book.',
     trustCards: [
@@ -535,7 +535,7 @@ export const defaultSiteSettings: SiteSettings = {
     settingValue: 'Psychosocial Wellbeing',
     settingDescription:
       "Including women's empowerment, children's rights, emotional wellbeing, and bullying prevention.",
-    approachLabel: 'How the work is held',
+    approachLabel: 'Therapeutic Approach',
     approachValue: 'Structured and relational',
     approachDescription:
       'Using counseling, CBT, and behavior strategies in a way that stays practical, emotionally aware, and culturally responsive.',
@@ -560,7 +560,7 @@ export const defaultSiteSettings: SiteSettings = {
       'Behavior management for children, including ASD and ADHD-related support',
       'Standardized psychological assessment and trauma-informed care',
     ],
-    toneEyebrow: 'Why the structure feels clear',
+    toneEyebrow: 'A clear structure',
     toneHeadline: 'Educational experience helps make care easier to understand and apply.',
     toneDescription:
       'Teaching experience strengthens the ability to pace information well, explain clearly, and create care plans people can actually return to.',
@@ -595,7 +595,7 @@ export const defaultSiteSettings: SiteSettings = {
     headline: 'Formal study, clinical roles, and teaching experience that strengthen the practice.',
     intro:
       'Professional grounding comes from academic study, clinical placements, counseling work, university teaching, and practical experience across different care settings.',
-    railEyebrow: 'What anchors the work',
+    railEyebrow: 'Professional Background',
     railHeadline: 'A practice shaped by both study and lived professional responsibility.',
     railDescription:
       'The combination of psychology training, postgraduate counseling study, and applied teaching experience supports work that is thoughtful, dependable, and usable in real life.',
@@ -665,22 +665,22 @@ export const defaultSiteSettings: SiteSettings = {
     headline: 'Visual thinking that supports expression, therapeutic tools, and public understanding.',
     intro:
       'Alongside counseling work, visual design and illustration are used to support communication, therapeutic materials, and more accessible mental health education.',
-    panelEyebrow: 'Visual practice',
+    panelEyebrow: 'Illustration',
     panelHeadline: 'Design and illustration as part of the wider professional voice.',
     panelDescription:
       'Graphic design training informs therapeutic tools, awareness materials, and a gentler visual language for communicating emotional ideas.',
     instagramCtaLabel: 'View the artwork',
-    galleryCaption: 'Selected visual work',
+    galleryCaption: '',
     featureAlt: 'Artwork from the visual practice',
-    galleryAltPrefix: 'Artwork detail',
-    featureBadge: 'Visual voice',
+    galleryAltPrefix: 'Artwork',
+    featureBadge: 'Creative practice',
   },
   consultationExperience: {
     eyebrow: 'Consultation Experience',
     headline: 'From first inquiry to later follow-up, the process stays calm and easy to return to.',
     description:
       'Published dates, secure sign-in, and a private dashboard make it easier to book, revisit upcoming sessions later, and adjust plans when needed.',
-    outcomeLabel: 'What the process offers',
+    outcomeLabel: 'What to Expect',
     outcomeHeadline: 'A quieter path into care.',
     outcomeDescription:
       'Less uncertainty, less back-and-forth, and a booking flow that keeps the important details visible from start to finish.',

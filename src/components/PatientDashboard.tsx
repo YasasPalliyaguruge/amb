@@ -182,7 +182,7 @@ export default function PatientDashboard() {
   }
 
   return (
-    <div className="patient-shell min-h-screen bg-brand-bg px-4 pb-16 pt-28 sm:px-6 lg:px-8">
+    <div className="patient-shell min-h-screen bg-brand-bg px-4 pb-16 pt-20 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-6">
         <section className="patient-hero">
           <div className="space-y-4">

@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import {
   collection,
   doc,
@@ -39,8 +39,6 @@ import {
 import { logAudit } from '../utils/auditLogger';
 import { parseStoredDate, toStoredDate } from '../utils/date';
 import { sanitizeSiteSettings, siteSettingsDocId } from '../siteSettings/siteSettings';
-import WebsiteSettingsPanel from './WebsiteSettingsPanel';
-import ClientNotesModal from './ClientNotesModal';
 import {
   adminTabs,
   type AdminTab,
@@ -53,6 +51,9 @@ import {
   weekdayLabels,
 } from './admin/types';
 import { EmptyState, formatSlot, MetricCard, ModalShell, SectionHeader, StatusBadge } from './admin/ui';
+
+const WebsiteSettingsPanel = lazy(() => import('./WebsiteSettingsPanel'));
+const ClientNotesModal = lazy(() => import('./ClientNotesModal'));
 
 const defaultComposerState = (): ComposerState => ({
   clientId: '',
@@ -77,6 +78,7 @@ function getStatusTone(status: AppointmentRecord['status']) {
 
 export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const tabbarRef = useRef<HTMLDivElement | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>(() => getInitialAdminTab(searchParams));
   const [dashboardNotice, setDashboardNotice] = useState('');
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
@@ -127,7 +129,12 @@ export default function AdminDashboard() {
     if (requestedTab !== activeTab) {
       setActiveTab(requestedTab);
     }
-  }, [searchParams]);
+  }, [activeTab, searchParams]);
+
+  useEffect(() => {
+    const activeTabButton = tabbarRef.current?.querySelector<HTMLButtonElement>(`#admin-tab-${activeTab}`);
+    activeTabButton?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [activeTab]);
 
   useEffect(() => { if (!loading && (!user || role !== 'admin')) navigate('/'); }, [loading, navigate, role, user]);
 
@@ -468,7 +475,7 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <div className="admin-tabbar" role="tablist" aria-label="Admin modules">
+        <div ref={tabbarRef} className="admin-tabbar" role="tablist" aria-label="Admin modules">
             {adminTabs.map((tab) => (
               <button
                 key={tab.id}
@@ -693,7 +700,15 @@ export default function AdminDashboard() {
 
         {activeTab === 'website' && (
           <div id="admin-tab-panel-website" role="tabpanel" aria-labelledby="admin-tab-website">
-            <WebsiteSettingsPanel adminId={user?.uid} adminEmail={user?.email || 'unknown'} />
+            <Suspense
+              fallback={
+                <section className="theme-panel p-8">
+                  <div className="theme-panel-soft min-h-[8rem] animate-pulse" />
+                </section>
+              }
+            >
+              <WebsiteSettingsPanel adminId={user?.uid} adminEmail={user?.email || 'unknown'} />
+            </Suspense>
           </div>
         )}
 
@@ -887,7 +902,11 @@ export default function AdminDashboard() {
         </ModalShell>
       )}
 
-      {notesClient && <ClientNotesModal isOpen={!!notesClient} onClose={() => setNotesClient(null)} clientId={notesClient.id} clientName={notesClient.name} />}
+      {notesClient && (
+        <Suspense fallback={null}>
+          <ClientNotesModal isOpen={!!notesClient} onClose={() => setNotesClient(null)} clientId={notesClient.id} clientName={notesClient.name} />
+        </Suspense>
+      )}
     </div>
   );
 }

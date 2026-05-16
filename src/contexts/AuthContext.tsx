@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import type { User } from 'firebase/auth';
 import toast from 'react-hot-toast';
+import { defaultSiteSettings } from '../siteSettings/siteSettings';
 import { isBootstrapAdminEmail } from '../config/admin';
 
 interface AuthContextType {
@@ -18,13 +19,8 @@ interface AuthFeedbackCopy {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function shouldPreferRedirectSignIn() {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return window.matchMedia('(max-width: 768px)').matches;
-}
+// Removed shouldPreferRedirectSignIn as modern mobile browsers prefer popups 
+// and the existing catch block handles popup blockers by falling back to redirect.
 
 function getAuthErrorMessage(error: unknown, fallbackMessage: string) {
   const message =
@@ -74,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
-        const [{ GoogleAuthProvider, onAuthStateChanged }, firestore, { auth }, { db }] = await Promise.all([
+        const [{ GoogleAuthProvider, getRedirectResult, onAuthStateChanged }, firestore, { auth }, { db }] = await Promise.all([
           import('firebase/auth'),
           import('firebase/firestore'),
           import('../firebase-auth'),
@@ -84,6 +80,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!isMounted) {
           return;
         }
+
+        // Complete any pending signInWithRedirect (mobile Google sign-in).
+        // getRedirectResult resolves to null when there was no redirect.
+        getRedirectResult(auth)
+          .then((result) => {
+            if (result?.user) {
+              const copy = defaultSiteSettings.loginModal;
+              toast.success(copy.googleSuccessToast);
+            }
+          })
+          .catch((error) => {
+            console.error('Redirect sign-in failed:', error);
+            const copy = defaultSiteSettings.loginModal;
+            toast.error(getAuthErrorMessage(error, copy.googleFailureFallback));
+          });
 
         unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
           if (!isMounted) return;
@@ -182,11 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ]);
       const storedProvider = (window as Window & { __ambGoogleAuthProvider?: InstanceType<typeof GoogleAuthProvider> }).__ambGoogleAuthProvider;
       const provider = storedProvider ?? new GoogleAuthProvider();
-      if (shouldPreferRedirectSignIn()) {
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-
+      // Always try popup first. If blocked, the catch block falls back to redirect.
       await signInWithPopup(auth, provider);
       toast.success(feedback.successMessage);
     } catch (error: any) {

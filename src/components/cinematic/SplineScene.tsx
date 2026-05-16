@@ -1,8 +1,8 @@
 import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Application } from '@splinetool/runtime';
-import { splineRuntimeWarmupPromise, warmSplineScene } from './splineWarmup';
+import { loadSplineRuntime, warmSplineScene } from './splineWarmup';
 
-const Spline = lazy(() => splineRuntimeWarmupPromise);
+const Spline = lazy(() => loadSplineRuntime());
 
 type SplineSceneProps = {
   scene?: string;

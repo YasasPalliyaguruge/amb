@@ -1,9 +1,10 @@
 export const PUBLIC_LOADING_SPLINE_SCENE = '/spline/coffee-loader-clean.splinecode?v=20260427c';
 export const PUBLIC_BACKGROUND_SPLINE_SCENE = '/spline/flower-bee-background-clean.splinecode?v=20260427b';
 
-export const splineRuntimeWarmupPromise = import('@splinetool/react-spline');
+type SplineRuntimeModule = typeof import('@splinetool/react-spline');
 
 const warmedScenePromises = new Map<string, Promise<boolean>>();
+let splineRuntimeWarmupPromise: Promise<SplineRuntimeModule> | null = null;
 let publicSplineWarmupPromise: Promise<PromiseSettledResult<unknown>[]> | null = null;
 
 const hasFetchSupport = () => typeof window !== 'undefined' && typeof window.fetch === 'function';
@@ -11,6 +12,14 @@ export const isMobileSplineViewport = () =>
   typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 export const isPublicExperienceRoute = (pathname = typeof window !== 'undefined' ? window.location.pathname : '/') =>
   pathname === '/';
+
+export function loadSplineRuntime() {
+  if (!splineRuntimeWarmupPromise) {
+    splineRuntimeWarmupPromise = import('@splinetool/react-spline');
+  }
+
+  return splineRuntimeWarmupPromise;
+}
 
 export function warmSplineScene(sceneUrl: string) {
   if (!sceneUrl || !hasFetchSupport()) {
@@ -37,7 +46,7 @@ export function warmSplineScene(sceneUrl: string) {
 
 export function warmPublicSplineAssets() {
   if (!publicSplineWarmupPromise) {
-    const tasks: Promise<unknown>[] = [splineRuntimeWarmupPromise, warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE)];
+    const tasks: Promise<unknown>[] = [loadSplineRuntime(), warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE)];
 
     if (!isMobileSplineViewport()) {
       tasks.push(warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE));

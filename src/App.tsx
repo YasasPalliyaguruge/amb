@@ -8,8 +8,6 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import SplineBackground from './components/cinematic/SplineBackground';
-import PublicSplinePreloader from './components/cinematic/PublicSplinePreloader';
 import {
   getPublicStartupUiState,
   isPublicExperiencePrepared,
@@ -26,20 +24,13 @@ import { isMobileSplineViewport, isPublicExperienceRoute } from './components/ci
 import type { HomepageSectionId } from './siteSettings/siteSettings';
 import { recordPerformanceMetric } from './utils/performanceMonitor';
 
-const publicExperienceModulesPromise = Promise.all([
-  import('./components/Ethos'),
-  import('./components/ClinicalPractice'),
-  import('./components/AcademicTenure'),
-  import('./components/DoodleArt'),
-  import('./components/ConsultationExperience'),
-  import('./components/ConsultationDesk'),
-  import('./components/Footer'),
-  import('./components/LoginModal'),
-]);
+let publicExperienceModulesPromise: Promise<void> | null = null;
 
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const PatientDashboard = lazy(() => import('./components/PatientDashboard'));
 const ThemeStudio = lazy(() => import('./components/ThemeStudio'));
+const SplineBackground = lazy(() => import('./components/cinematic/SplineBackground'));
+const PublicSplinePreloader = lazy(() => import('./components/cinematic/PublicSplinePreloader'));
 const LoginModal = lazy(() => import('./components/LoginModal'));
 const Footer = lazy(() => import('./components/Footer'));
 const Ethos = lazy(() => import('./components/Ethos'));
@@ -50,6 +41,19 @@ const ConsultationExperience = lazy(() => import('./components/ConsultationExper
 const ConsultationDesk = lazy(() => import('./components/ConsultationDesk'));
 
 function preloadPublicExperience() {
+  if (!publicExperienceModulesPromise) {
+    publicExperienceModulesPromise = Promise.all([
+      import('./components/Ethos'),
+      import('./components/ClinicalPractice'),
+      import('./components/AcademicTenure'),
+      import('./components/DoodleArt'),
+      import('./components/ConsultationExperience'),
+      import('./components/ConsultationDesk'),
+      import('./components/Footer'),
+      import('./components/LoginModal'),
+    ]).then(() => undefined);
+  }
+
   return publicExperienceModulesPromise;
 }
 
@@ -399,16 +403,20 @@ function MainPortfolio() {
 
   return (
     <div className={`public-site relative public-site--${startupPhase}`}>
-      <SplineBackground
-        isVisible={isPublicExperienceVisible}
-        onSceneReady={handleBackgroundReady}
-      />
-      {shouldRenderPreloader && shouldUseSplinePreloader && (
-        <PublicSplinePreloader
-          isLeaving={shouldFadePreloaderLayer}
-          isSceneHidden={shouldHidePreloaderScene}
-          onSceneReady={handlePreloaderReady}
+      <Suspense fallback={null}>
+        <SplineBackground
+          isVisible={isPublicExperienceVisible}
+          onSceneReady={handleBackgroundReady}
         />
+      </Suspense>
+      {shouldRenderPreloader && shouldUseSplinePreloader && (
+        <Suspense fallback={null}>
+          <PublicSplinePreloader
+            isLeaving={shouldFadePreloaderLayer}
+            isSceneHidden={shouldHidePreloaderScene}
+            onSceneReady={handlePreloaderReady}
+          />
+        </Suspense>
       )}
       <div
         className="public-site__content"
