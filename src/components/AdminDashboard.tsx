@@ -2,12 +2,14 @@ import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, 
 import {
   collection,
   doc,
+  documentId,
   limit,
   onSnapshot,
   orderBy,
   query,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 import { addDays, format, startOfWeek } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -143,25 +145,56 @@ export default function AdminDashboard() {
     const unsubscribes = [
       onSnapshot(query(collection(db, 'appointments'), orderBy('date', 'asc')), (snapshot) => setAppointments(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as AppointmentRecord))), () => setDashboardNotice('Appointments could not be loaded right now.')),
       onSnapshot(collection(db, 'users'), (snapshot) => setUsers(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as UserRecord)))),
-      onSnapshot(collection(db, 'availability'), (snapshot) => setAvailabilityDocs(snapshot.docs.map((entry) => ({ id: entry.id, slots: [...((entry.data().slots as string[] | undefined) || [])].sort(), blocked: Boolean(entry.data().blocked), blockedReason: typeof entry.data().blockedReason === 'string' ? entry.data().blockedReason : null })))),
-      onSnapshot(query(collection(db, 'mediaAssets'), orderBy('createdAt', 'desc')), (snapshot) => {
-        const assets = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as MediaAssetRecord));
-        setMediaAssets(assets);
-        setMediaDrafts((current) => {
-          const nextDrafts = { ...current };
-          assets.forEach((asset) => {
-            if (!nextDrafts[asset.id]) {
-              nextDrafts[asset.id] = { label: asset.label, category: asset.category };
-            }
-          });
-          return nextDrafts;
-        });
-      }),
-      onSnapshot(query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(60)), (snapshot) => setAuditLogs(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })))),
       onSnapshot(doc(db, 'settings', 'general'), (snapshot) => { if (snapshot.exists()) setSettings(snapshot.data() as PracticeSettings); }),
     ];
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
   }, [role, user]);
+
+  useEffect(() => {
+    if (!user || role !== 'admin') return;
+
+    const today = toStoredDate(new Date());
+    const availabilitySource =
+      activeTab === 'availability'
+        ? collection(db, 'availability')
+        : query(collection(db, 'availability'), where(documentId(), '>=', today));
+
+    return onSnapshot(availabilitySource, (snapshot) => {
+      setAvailabilityDocs(snapshot.docs.map((entry) => ({
+        id: entry.id,
+        slots: [...((entry.data().slots as string[] | undefined) || [])].sort(),
+        blocked: Boolean(entry.data().blocked),
+        blockedReason: typeof entry.data().blockedReason === 'string' ? entry.data().blockedReason : null,
+      })));
+    });
+  }, [activeTab, role, user]);
+
+  useEffect(() => {
+    if (!user || role !== 'admin' || (activeTab !== 'overview' && activeTab !== 'media')) return;
+
+    return onSnapshot(query(collection(db, 'mediaAssets'), orderBy('createdAt', 'desc')), (snapshot) => {
+      const assets = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as MediaAssetRecord));
+      setMediaAssets(assets);
+      setMediaDrafts((current) => {
+        const nextDrafts = { ...current };
+        assets.forEach((asset) => {
+          if (!nextDrafts[asset.id]) {
+            nextDrafts[asset.id] = { label: asset.label, category: asset.category };
+          }
+        });
+        return nextDrafts;
+      });
+    });
+  }, [activeTab, role, user]);
+
+  useEffect(() => {
+    if (!user || role !== 'admin' || (activeTab !== 'overview' && activeTab !== 'audit')) return;
+
+    return onSnapshot(
+      query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(60)),
+      (snapshot) => setAuditLogs(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })))
+    );
+  }, [activeTab, role, user]);
 
   const userMap = useMemo(() => new Map(users.map((entry) => [entry.id, entry])), [users]);
   const availabilityMap = useMemo(() => new Map(availabilityDocs.map((entry) => [entry.id, entry])), [availabilityDocs]);

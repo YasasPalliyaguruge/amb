@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { format, parse } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -86,7 +86,8 @@ export default function PatientDashboard() {
 
     const appointmentsQuery = query(
       collection(db, 'appointments'),
-      where('clientId', '==', user.uid)
+      where('clientId', '==', user.uid),
+      orderBy('date', 'asc')
     );
 
     const unsubscribeAppointments = onSnapshot(

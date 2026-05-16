@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, documentId, getDocs, onSnapshot, query, setDoc, where, writeBatch, type FirestoreError, type Unsubscribe } from 'firebase/firestore';
+import { collection, deleteDoc, doc, documentId, getDoc, getDocs, onSnapshot, query, setDoc, where, writeBatch, type FirestoreError, type Unsubscribe } from 'firebase/firestore';
 import { addDays, format, isValid, parse } from 'date-fns';
 import { db } from '../firebase-db';
 import { listStoredDatesInRange, parseStoredDate } from '../utils/date';
@@ -278,11 +278,8 @@ export async function duplicateAvailabilityTemplate(
     throw new Error('Target start date must be on or before the target end date.');
   }
 
-  const sourceDoc = await getDocs(
-    query(collection(db, 'availability'), where(documentId(), '==', input.sourceDate))
-  );
-  const sourceAvailability = sourceDoc.docs[0];
-  const sourceSlots = sortSlots((sourceAvailability?.data().slots as string[] | undefined) || []);
+  const sourceAvailability = await getDoc(doc(db, 'availability', input.sourceDate));
+  const sourceSlots = sortSlots((sourceAvailability.exists() ? sourceAvailability.data().slots as string[] | undefined : []) || []);
 
   if (sourceSlots.length === 0) {
     throw new Error('The source date has no slots to duplicate.');

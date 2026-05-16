@@ -108,45 +108,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified) ? 'admin' : null);
             const userRef = firestore.doc(db, 'users', currentUser.uid);
             try {
-              const userSnap = await firestore.getDoc(userRef);
-              if (!isCurrentAuthEvent()) {
-                return;
-              }
-
-              if (!userSnap.exists()) {
-                const isDefaultAdmin = isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified);
-                await firestore.setDoc(userRef, {
-                  name: currentUser.displayName || 'Client',
-                  email: currentUser.email || '',
-                  ...(currentUser.phoneNumber ? { phone: currentUser.phoneNumber } : {}),
-                  role: isDefaultAdmin ? 'admin' : 'client',
-                  createdAt: firestore.serverTimestamp()
-                });
-              }
-
-              if (!isCurrentAuthEvent()) {
-                return;
-              }
-
               unsubscribeRole?.();
               unsubscribeRole = firestore.onSnapshot(
                 userRef,
-                (roleSnap) => {
+                async (roleSnap) => {
                   const isDefaultAdmin = isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified);
-                  const nextRole = isDefaultAdmin
-                    ? 'admin'
-                    : roleSnap.exists()
-                      ? (roleSnap.data().role || 'client')
-                      : 'client';
+
+                  if (!roleSnap.exists()) {
+                    const nextRole = isDefaultAdmin ? 'admin' : 'client';
+
+                    if (isCurrentAuthEvent()) {
+                      setRole(nextRole);
+                      setLoading(false);
+                    }
+
+                    try {
+                      await firestore.setDoc(userRef, {
+                        name: currentUser.displayName || 'Client',
+                        email: currentUser.email || '',
+                        ...(currentUser.phoneNumber ? { phone: currentUser.phoneNumber } : {}),
+                        role: nextRole,
+                        createdAt: firestore.serverTimestamp()
+                      });
+                    } catch (createError) {
+                      console.error('Error creating user document:', createError);
+                    }
+
+                    return;
+                  }
+
+                  const nextRole = isDefaultAdmin ? 'admin' : (roleSnap.data().role || 'client');
 
                   if (isCurrentAuthEvent()) {
                     setRole(nextRole);
+                    setLoading(false);
                   }
                 },
                 (roleError) => {
                   console.error('Error subscribing to user role:', roleError);
                   if (isCurrentAuthEvent()) {
                     setRole(isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified) ? 'admin' : 'client');
+                    setLoading(false);
                   }
                 }
               );
@@ -162,7 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(null);
           }
 
-          if (isCurrentAuthEvent()) {
+          if (!currentUser && isCurrentAuthEvent()) {
             setLoading(false);
           }
         });
