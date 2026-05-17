@@ -14,6 +14,7 @@ import {
   Phone,
   RefreshCw,
   UserRound,
+  Video,
   XCircle,
 } from 'lucide-react';
 import { db } from '../firebase-db';
@@ -39,6 +40,30 @@ interface Appointment {
   serviceType: string;
   status: string;
   notes: string;
+  sessionMode?: 'in_person' | 'online';
+  onlineSession?: {
+    provider: 'zoom' | 'teams' | 'google_meet' | 'jitsi' | 'other';
+    url: string;
+    visibleToClient: boolean;
+    notes: string;
+  } | null;
+}
+
+const onlineProviderLabels = {
+  zoom: 'Zoom',
+  teams: 'Microsoft Teams',
+  google_meet: 'Google Meet',
+  jitsi: 'Jitsi',
+  other: 'Online',
+} as const;
+
+function canJoinOnlineSession(appointment: Appointment) {
+  return Boolean(
+    appointment.status === 'scheduled' &&
+    appointment.sessionMode === 'online' &&
+    appointment.onlineSession?.visibleToClient &&
+    appointment.onlineSession.url
+  );
 }
 
 function getStatusStyles(status: string) {
@@ -189,9 +214,9 @@ export default function PatientDashboard() {
           <div className="space-y-4">
             <span className="theme-chip">Client Portal</span>
             <div className="space-y-3">
-              <h1 className="patient-hero__title">Your bookings and care details, kept simple.</h1>
+              <h1 className="patient-hero__title">Bookings and care details</h1>
               <p className="patient-hero__body">
-                Review what is coming next, update contact details, and manage appointments from one private workspace.
+                Upcoming sessions, contact details, and appointment actions.
               </p>
             </div>
           </div>
@@ -226,7 +251,25 @@ export default function PatientDashboard() {
                   </div>
                   <p className="patient-next-panel__service text-sm font-semibold">{nextAppointment.serviceType}</p>
                   {nextAppointment.notes && <p className="patient-next-panel__notes text-sm leading-6">{nextAppointment.notes}</p>}
+                  {nextAppointment.sessionMode === 'online' ? (
+                    <p className="patient-next-panel__meta text-sm leading-6">
+                      {nextAppointment.onlineSession?.url && nextAppointment.onlineSession.visibleToClient ? `${onlineProviderLabels[nextAppointment.onlineSession.provider]} session` : 'Online session'}
+                    </p>
+                  ) : null}
+                  {nextAppointment.onlineSession?.notes && nextAppointment.onlineSession.visibleToClient ? (
+                    <p className="patient-next-panel__notes text-sm leading-6">{nextAppointment.onlineSession.notes}</p>
+                  ) : null}
                   <div className="flex flex-wrap gap-2">
+                    {canJoinOnlineSession(nextAppointment) ? (
+                      <a
+                        href={nextAppointment.onlineSession?.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="patient-next-panel__action rounded-full border px-4 py-2 text-sm font-semibold transition"
+                      >
+                        Join session
+                      </a>
+                    ) : null}
                     <button
                       onClick={() => setReschedulingAppt(nextAppointment)}
                       className="patient-next-panel__action rounded-full border px-4 py-2 text-sm font-semibold transition"
@@ -245,7 +288,7 @@ export default function PatientDashboard() {
                 <>
                   <p className="patient-next-panel__title font-heading text-3xl font-semibold leading-tight">No upcoming session yet.</p>
                   <p className="patient-next-panel__meta text-sm leading-6">
-                    When you reserve a slot, the next session appears here with quick actions.
+                    No scheduled upcoming session.
                   </p>
                   <a href="/#consultation-desk" className="patient-next-panel__ghost inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold">
                     Book a session
@@ -272,7 +315,7 @@ export default function PatientDashboard() {
               <div>
                 <h2 className="font-heading text-2xl font-semibold text-[rgb(var(--theme-text-rgb))]">Profile</h2>
                 <p className="mt-1 text-sm leading-6 text-[rgb(var(--theme-muted-rgb))]">
-                  Keep contact details ready for confirmations and schedule changes.
+                  Contact details for confirmations and schedule changes.
                 </p>
               </div>
               <UserRound className="h-5 w-5 text-[rgb(var(--theme-primary-rgb))]" />
@@ -364,7 +407,7 @@ export default function PatientDashboard() {
             <div className="space-y-2">
               <h2 className="font-heading text-2xl font-semibold text-[rgb(var(--theme-text-rgb))]">Appointments</h2>
               <p className="text-sm leading-6 text-[rgb(var(--theme-muted-rgb))]">
-                Scheduled sessions can be rescheduled or cancelled before the appointment date.
+                Scheduled, completed, and cancelled sessions.
               </p>
             </div>
             <a href="/#consultation-desk" className="theme-button-secondary">
@@ -383,7 +426,7 @@ export default function PatientDashboard() {
               <CalendarDays className="h-7 w-7 text-[rgb(var(--theme-primary-rgb))]" />
               <p className="font-semibold text-[rgb(var(--theme-text-rgb))]">No appointments booked yet.</p>
               <p className="max-w-xl text-sm leading-6 text-[rgb(var(--theme-muted-rgb))]">
-                Book a consultation and it will appear here with quick controls for later changes.
+                No appointment records.
               </p>
             </div>
           ) : (
@@ -408,6 +451,12 @@ export default function PatientDashboard() {
                           {appointment.status === 'scheduled' ? <CheckCircle2 className="h-3.5 w-3.5" /> : appointment.status === 'cancelled' ? <XCircle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
                           {appointment.status}
                         </span>
+                        {appointment.sessionMode === 'online' ? (
+                          <span className="patient-status-badge border-[rgb(var(--theme-primary-rgb)/0.18)] bg-[rgb(var(--theme-primary-rgb)/0.08)] text-[rgb(var(--theme-primary-rgb))]">
+                            <Video className="h-3.5 w-3.5" />
+                            online
+                          </span>
+                        ) : null}
                       </div>
                       <div className="flex flex-wrap items-center gap-3 text-sm text-[rgb(var(--theme-muted-rgb))]">
                         <span className="inline-flex items-center gap-1.5">
@@ -422,6 +471,9 @@ export default function PatientDashboard() {
                       {appointment.notes && (
                         <p className="line-clamp-2 text-sm leading-6 text-[rgb(var(--theme-muted-rgb))]">{appointment.notes}</p>
                       )}
+                      {appointment.sessionMode === 'online' && appointment.onlineSession?.notes && appointment.onlineSession.visibleToClient ? (
+                        <p className="line-clamp-2 text-sm leading-6 text-[rgb(var(--theme-muted-rgb))]">{appointment.onlineSession.notes}</p>
+                      ) : null}
                     </div>
 
                     <div className="patient-row-actions">
@@ -434,12 +486,18 @@ export default function PatientDashboard() {
                                 Cancel it
                               </button>
                               <button onClick={() => setCancellingId(null)} className="patient-neutral-button">
-                                Keep
+                                Keep session
                               </button>
                             </div>
                           </div>
                         ) : (
                           <>
+                            {canJoinOnlineSession(appointment) ? (
+                              <a href={appointment.onlineSession?.url} target="_blank" rel="noreferrer" className="patient-action-button">
+                                <Video className="h-4 w-4" />
+                                Join
+                              </a>
+                            ) : null}
                             <button onClick={() => setReschedulingAppt(appointment)} className="patient-action-button">
                               <RefreshCw className="h-4 w-4" />
                               Reschedule
@@ -450,7 +508,7 @@ export default function PatientDashboard() {
                           </>
                         )
                       ) : (
-                        <span className="text-sm text-[rgb(var(--theme-muted-rgb)/0.92)]">No action needed</span>
+                        <span className="text-sm text-[rgb(var(--theme-muted-rgb)/0.92)]">Closed</span>
                       )}
                     </div>
                   </article>

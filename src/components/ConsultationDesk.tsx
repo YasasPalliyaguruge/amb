@@ -4,7 +4,7 @@ import Calendar from 'react-calendar';
 import { format, isBefore, isToday, parse } from 'date-fns';
 import { doc, onSnapshot } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { ArrowRight, CalendarDays, CheckCircle2, Clock, X } from 'lucide-react';
+import { ArrowRight, CalendarDays, CheckCircle2, Clock, Video, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase-db';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,6 +38,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [serviceType, setServiceType] = useState('');
+  const [sessionMode, setSessionMode] = useState<'in_person' | 'online'>('in_person');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>('select');
@@ -146,7 +147,8 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
         user.displayName || siteSettings.branding.userFallbackLabel,
         user.email || '',
         serviceType || serviceTypes[0]?.value || 'Consultation',
-        notes
+        notes,
+        sessionMode
       );
       setNotificationState(result.notificationState);
       setStep('success');
@@ -162,6 +164,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
     if (step === 'success') {
       setSelectedSlot(null);
       setNotificationState('skipped');
+      setSessionMode('in_person');
     }
     setStep('select');
   };
@@ -543,6 +546,10 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                           {user?.displayName || siteSettings.branding.userFallbackLabel}
                         </span>
                       </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-sm text-brand-text/58">Session</span>
+                        <span className="font-semibold text-brand-text">{sessionMode === 'online' ? 'Online' : 'In person'}</span>
+                      </div>
                     </div>
 
                     <div className="space-y-3" role="group" aria-labelledby="booking-service-type-label">
@@ -570,6 +577,39 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                             <p className="text-xs leading-5 text-brand-text/55">{service.desc}</p>
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3" role="group" aria-labelledby="booking-session-type-label">
+                      <p id="booking-session-type-label" className="text-sm font-semibold text-brand-text/82">Session type</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => setSessionMode('in_person')}
+                          className={`rounded-[1.4rem] border p-4 text-left transition ${
+                            sessionMode === 'in_person'
+                              ? 'border-brand-primary/45 bg-brand-primary/8 shadow-[0_14px_32px_rgba(184,95,61,0.08)]'
+                              : 'border-brand-secondary/30 bg-white hover:border-brand-primary/28 hover:bg-brand-bg/55'
+                          }`}
+                        >
+                          <span className="text-sm font-semibold text-brand-text">In person</span>
+                          <p className="mt-1 text-xs leading-5 text-brand-text/55">Clinic or agreed location.</p>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSessionMode('online')}
+                          className={`rounded-[1.4rem] border p-4 text-left transition ${
+                            sessionMode === 'online'
+                              ? 'border-brand-primary/45 bg-brand-primary/8 shadow-[0_14px_32px_rgba(184,95,61,0.08)]'
+                              : 'border-brand-secondary/30 bg-white hover:border-brand-primary/28 hover:bg-brand-bg/55'
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-2 text-sm font-semibold text-brand-text">
+                            <Video className="h-4 w-4" />
+                            Online
+                          </span>
+                          <p className="mt-1 text-xs leading-5 text-brand-text/55">Meeting link added after confirmation.</p>
+                        </button>
                       </div>
                     </div>
 
@@ -628,6 +668,10 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                       <div className="flex items-center justify-between gap-4">
                         <span className="text-brand-text/58">{siteSettings.consultationDesk.modalServiceLabel}</span>
                         <span className="font-semibold text-brand-text">{selectedService?.label}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-brand-text/58">Session</span>
+                        <span className="font-semibold text-brand-text">{sessionMode === 'online' ? 'Online' : 'In person'}</span>
                       </div>
                     </div>
 

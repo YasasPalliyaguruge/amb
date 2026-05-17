@@ -63,7 +63,20 @@ const defaultComposerState = (): ComposerState => ({
   timeSlot: '',
   serviceType: 'Consultation',
   notes: '',
+  sessionMode: 'in_person',
+  onlineProvider: 'zoom',
+  onlineUrl: '',
+  onlineVisibleToClient: true,
+  onlineNotes: '',
 });
+
+const onlineProviderLabels = {
+  zoom: 'Zoom',
+  teams: 'Microsoft Teams',
+  google_meet: 'Google Meet',
+  jitsi: 'Jitsi',
+  other: 'Other',
+} as const;
 
 function getInitialAdminTab(searchParams: URLSearchParams): AdminTab {
   const requestedTab = searchParams.get('tab');
@@ -76,6 +89,43 @@ function getStatusTone(status: AppointmentRecord['status']) {
     : status === 'cancelled'
       ? 'danger'
       : 'accent';
+}
+
+function formatAuditTimestamp(timestamp: any) {
+  if (timestamp?.toDate) {
+    return format(timestamp.toDate(), 'MMM d, yyyy HH:mm');
+  }
+
+  if (timestamp instanceof Date) {
+    return format(timestamp, 'MMM d, yyyy HH:mm');
+  }
+
+  return 'Just now';
+}
+
+function sortAppointmentsNewestFirst(left: AppointmentRecord, right: AppointmentRecord) {
+  const dateComparison = right.date.localeCompare(left.date);
+
+  if (dateComparison !== 0) {
+    return dateComparison;
+  }
+
+  return right.timeSlot.localeCompare(left.timeSlot);
+}
+
+function normalizeOnlineUrl(value: string) {
+  return value.trim();
+}
+
+function isValidOnlineUrl(value: string) {
+  if (!value) return true;
+
+  try {
+    const parsedUrl = new URL(value);
+    return parsedUrl.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 export default function AdminDashboard() {
@@ -93,6 +143,11 @@ export default function AdminDashboard() {
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentRecord | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState(toStoredDate(new Date()));
   const [rescheduleTime, setRescheduleTime] = useState('');
+  const [sessionModeDraft, setSessionModeDraft] = useState<'in_person' | 'online'>('in_person');
+  const [onlineProviderDraft, setOnlineProviderDraft] = useState<NonNullable<AppointmentRecord['onlineSession']>['provider']>('zoom');
+  const [onlineUrlDraft, setOnlineUrlDraft] = useState('');
+  const [onlineVisibleDraft, setOnlineVisibleDraft] = useState(true);
+  const [onlineNotesDraft, setOnlineNotesDraft] = useState('');
   const [composerState, setComposerState] = useState<ComposerState>(defaultComposerState);
   const [composerOpen, setComposerOpen] = useState(false);
   const [notesClient, setNotesClient] = useState<{ id: string; name: string } | null>(null);
@@ -143,7 +198,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!user || role !== 'admin') return;
     const unsubscribes = [
-      onSnapshot(query(collection(db, 'appointments'), orderBy('date', 'asc')), (snapshot) => setAppointments(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as AppointmentRecord))), () => setDashboardNotice('Appointments could not be loaded right now.')),
+      onSnapshot(query(collection(db, 'appointments'), orderBy('date', 'desc')), (snapshot) => setAppointments(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as AppointmentRecord))), () => setDashboardNotice('Appointments could not be loaded right now.')),
       onSnapshot(collection(db, 'users'), (snapshot) => setUsers(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as UserRecord)))),
       onSnapshot(doc(db, 'settings', 'general'), (snapshot) => { if (snapshot.exists()) setSettings(snapshot.data() as PracticeSettings); }),
     ];
@@ -206,13 +261,17 @@ export default function AdminDashboard() {
   const totalAppointments = appointments.length;
   const scheduledCount = appointments.filter((entry) => entry.status === 'scheduled').length;
   const completedCount = appointments.filter((entry) => entry.status === 'completed').length;
-  const filteredAppointments = useMemo(() => appointments.filter((entry) => {
-    const linkedUser = userMap.get(entry.clientId);
-    const haystack = `${entry.clientName} ${linkedUser?.email || ''}`.toLowerCase();
-    return (filters.status === 'all' || entry.status === filters.status) && (filters.service === 'all' || entry.serviceType === filters.service) && (!filters.date || entry.date === filters.date) && (!filters.search || haystack.includes(filters.search.toLowerCase()));
-  }), [appointments, filters, userMap]);
+  const filteredAppointments = useMemo(() => appointments
+    .filter((entry) => {
+      const linkedUser = userMap.get(entry.clientId);
+      const haystack = `${entry.clientName} ${linkedUser?.email || ''}`.toLowerCase();
+      return (filters.status === 'all' || entry.status === filters.status) && (filters.service === 'all' || entry.serviceType === filters.service) && (!filters.date || entry.date === filters.date) && (!filters.search || haystack.includes(filters.search.toLowerCase()));
+    })
+    .sort(sortAppointmentsNewestFirst), [appointments, filters, userMap]);
   const selectedClient = clientUsers.find((entry) => entry.id === selectedClientId) || null;
-  const selectedClientAppointments = appointments.filter((entry) => entry.clientId === selectedClientId);
+  const selectedClientAppointments = appointments
+    .filter((entry) => entry.clientId === selectedClientId)
+    .sort(sortAppointmentsNewestFirst);
   const composerSlots = availabilityMap.get(composerState.date)?.slots || [];
   const rescheduleSlots = availabilityMap.get(rescheduleDate)?.slots || [];
   const repeatClientCount = (Object.values(appointments.reduce<Record<string, number>>((accumulator, entry) => { accumulator[entry.clientId] = (accumulator[entry.clientId] || 0) + 1; return accumulator; }, {})) as number[]).filter((count) => count > 1).length;
@@ -266,12 +325,26 @@ export default function AdminDashboard() {
   };
   const writeSiteSettings = async (nextSettings: typeof siteSettings, auditMessage: string) => { await setDoc(doc(db, 'settings', siteSettingsDocId), sanitizeSiteSettings(nextSettings)); if (user) void logAudit(user.uid, user.email || 'unknown', 'UPDATE_SITE_SETTINGS', auditMessage); };
   const openComposerForClient = (clientId?: string) => { setComposerState({ ...defaultComposerState(), clientId: clientId || '' }); setComposerOpen(true); };
+  const openAppointmentManager = (appointment: AppointmentRecord) => {
+    setSelectedAppointment(appointment);
+    setRescheduleDate(appointment.date);
+    setRescheduleTime('');
+    setSessionModeDraft(appointment.sessionMode || 'in_person');
+    setOnlineProviderDraft(appointment.onlineSession?.provider || 'zoom');
+    setOnlineUrlDraft(appointment.onlineSession?.url || '');
+    setOnlineVisibleDraft(appointment.onlineSession?.visibleToClient ?? true);
+    setOnlineNotesDraft(appointment.onlineSession?.notes || '');
+  };
   const handleAdminBooking = async () => {
     const client = userMap.get(composerState.clientId);
     if (!user || !client) return toast.error('Choose a client first.');
     if (!composerState.date) return toast.error('Choose a date.');
     if (!composerState.timeSlot) return toast.error('Choose an available time slot.');
     if (!composerState.serviceType.trim()) return toast.error('Enter the service type.');
+    const onlineUrl = normalizeOnlineUrl(composerState.onlineUrl);
+    if (composerState.sessionMode === 'online' && !isValidOnlineUrl(onlineUrl)) {
+      return toast.error('Enter a valid https meeting link.');
+    }
     setIsBusy(true);
     try {
       const result = await bookConsultationAsAdmin({
@@ -282,6 +355,15 @@ export default function AdminDashboard() {
         clientEmail: client.email || '',
         serviceType: composerState.serviceType.trim(),
         notes: composerState.notes.trim(),
+        sessionMode: composerState.sessionMode,
+        onlineSession: composerState.sessionMode === 'online'
+          ? {
+              provider: composerState.onlineProvider,
+              url: onlineUrl,
+              visibleToClient: composerState.onlineVisibleToClient,
+              notes: composerState.onlineNotes.trim(),
+            }
+          : null,
       });
       toast.success(
         result.notificationState === 'failed'
@@ -298,6 +380,42 @@ export default function AdminDashboard() {
     }
   };
   const handleStatusUpdate = async (appointmentId: string, nextStatus: AppointmentRecord['status']) => { if (!user) return; try { await updateAppointmentStatus(appointmentId, nextStatus, user.uid, true); toast.success('Appointment updated'); } catch (error: any) { toast.error(error.message || 'Failed to update appointment'); } };
+  const handleOnlineSessionSave = async () => {
+    if (!user || !selectedAppointment) return;
+
+    const onlineUrl = normalizeOnlineUrl(onlineUrlDraft);
+    if (sessionModeDraft === 'online' && !isValidOnlineUrl(onlineUrl)) {
+      return toast.error('Enter a valid https meeting link.');
+    }
+
+    const nextOnlineSession = sessionModeDraft === 'online'
+      ? {
+          provider: onlineProviderDraft,
+          url: onlineUrl,
+          visibleToClient: onlineVisibleDraft,
+          notes: onlineNotesDraft.trim(),
+        }
+      : null;
+
+    setIsBusy(true);
+    try {
+      await updateDoc(doc(db, 'appointments', selectedAppointment.id), {
+        sessionMode: sessionModeDraft,
+        onlineSession: nextOnlineSession,
+      });
+      setSelectedAppointment((current) => current ? {
+        ...current,
+        sessionMode: sessionModeDraft,
+        onlineSession: nextOnlineSession,
+      } : current);
+      void logAudit(user.uid, user.email || 'unknown', 'UPDATE_ONLINE_SESSION', `Updated online session for ${selectedAppointment.clientName}`, selectedAppointment.id);
+      toast.success('Online session updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update online session');
+    } finally {
+      setIsBusy(false);
+    }
+  };
   const handleAdminReschedule = async () => {
     if (!user || !selectedAppointment) return;
     if (!rescheduleDate) return toast.error('Choose a new date.');
@@ -446,7 +564,7 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               <span className="admin-hero__eyebrow">Admin dashboard</span>
               <h1 className="admin-hero__heading">Loading the control center</h1>
-              <p className="admin-hero__body">Appointments, site settings, clients, and reporting are being prepared.</p>
+              <p className="admin-hero__body">Appointments, availability, clients, website content, and reporting.</p>
             </div>
           </section>
         </div>
@@ -462,7 +580,7 @@ export default function AdminDashboard() {
             <span className="admin-hero__eyebrow">{activeTabLabel}</span>
             <h1 className="admin-hero__heading">Practice control center</h1>
             <p className="admin-hero__body">
-              Review workload, publish availability, update website content, and manage client records from one focused workspace.
+              Appointments, availability, clients, website content, and admin controls.
             </p>
           </div>
           <div className="admin-toolbar">
@@ -486,25 +604,25 @@ export default function AdminDashboard() {
           <MetricCard label="Repeat clients" value={repeatClientCount} />
         </div>
 
-        <section className="admin-focus-strip" aria-label="Admin workspace summary">
+        <section className="admin-focus-strip" aria-label="Admin summary">
           <div className="admin-focus-card">
             <p className="admin-focus-card__label">Next open date</p>
             <p className="admin-focus-card__value">
               {nextPublishedDate ? format(parseStoredDate(nextPublishedDate.id), 'MMM d') : 'None'}
             </p>
             <p className="admin-focus-card__body">
-              {nextPublishedDate ? `${nextPublishedDate.slots.length} published slot${nextPublishedDate.slots.length === 1 ? '' : 's'}` : 'Publish availability before clients can book.'}
+              {nextPublishedDate ? `${nextPublishedDate.slots.length} published slot${nextPublishedDate.slots.length === 1 ? '' : 's'}` : 'No published slots'}
             </p>
           </div>
           <div className="admin-focus-card">
             <p className="admin-focus-card__label">This week</p>
             <p className="admin-focus-card__value">{upcomingWeekLoad}</p>
-            <p className="admin-focus-card__body">Scheduled session{upcomingWeekLoad === 1 ? '' : 's'} in the next seven days.</p>
+            <p className="admin-focus-card__body">Next seven days</p>
           </div>
           <div className="admin-focus-card">
             <p className="admin-focus-card__label">Live media slots</p>
             <p className="admin-focus-card__value">{liveMediaSlots}</p>
-            <p className="admin-focus-card__body">Images currently assigned across hero, art, and consultation sections.</p>
+            <p className="admin-focus-card__body">Hero, art, and consultation sections</p>
           </div>
         </section>
 
@@ -537,7 +655,7 @@ export default function AdminDashboard() {
               <SectionHeader
                 eyebrow="Overview"
                 title="Operational snapshot"
-                description="A quick read on upcoming workload, published availability, blocked dates, and live media volume."
+                description="Upcoming workload, published availability, blocked dates, and live media."
               />
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="theme-panel-soft p-5"><p className="utility-label">Upcoming week</p><p className="mt-3 text-2xl font-semibold">{upcomingWeekLoad} sessions</p></div>
@@ -550,7 +668,7 @@ export default function AdminDashboard() {
               <SectionHeader
                 eyebrow="Audit"
                 title="Recent activity"
-                description="The latest admin actions across content, bookings, roles, and media."
+                description="Content, bookings, roles, and media changes."
               />
               <div className="admin-list">
                 {auditLogs.slice(0, 6).length > 0 ? auditLogs.slice(0, 6).map((log) => (
@@ -561,7 +679,7 @@ export default function AdminDashboard() {
                 )) : (
                   <EmptyState
                     title="No recent activity"
-                    description="New admin actions will appear here once bookings, settings, or roles are updated."
+                    description="No logged admin actions."
                   />
                 )}
               </div>
@@ -579,25 +697,25 @@ export default function AdminDashboard() {
             <section className="theme-panel p-6">
               <SectionHeader
                 eyebrow="Appointments"
-                title="Search, manage, and create bookings"
-                description="Filter by client, date, service, or status, then open an appointment to review notes, reschedule, or update status."
+                title="Appointment management"
+                description="Client, date, service, and status filters."
                 actions={<button type="button" onClick={() => openComposerForClient()} className="theme-button-primary whitespace-nowrap">Create booking</button>}
               />
               <div className="admin-filter-grid">
                 <label className="admin-field">
-                  <span className="admin-field__label">Search</span>
+                  <span className="admin-field__label">Appointment search</span>
                   <input value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} placeholder="Client name or email" className="theme-input" />
                 </label>
                 <label className="admin-field">
-                  <span className="admin-field__label">Date</span>
+                  <span className="admin-field__label">Appointment date</span>
                   <input type="date" value={filters.date} onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))} className="theme-input" />
                 </label>
                 <label className="admin-field">
-                  <span className="admin-field__label">Status</span>
+                  <span className="admin-field__label">Appointment status</span>
                   <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className="theme-select"><option value="all">All statuses</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
                 </label>
                 <label className="admin-field">
-                  <span className="admin-field__label">Service</span>
+                  <span className="admin-field__label">Service type</span>
                   <select value={filters.service} onChange={(event) => setFilters((current) => ({ ...current, service: event.target.value }))} className="theme-select"><option value="all">All services</option>{serviceOptions.map((service) => <option key={service} value={service}>{service}</option>)}</select>
                 </label>
               </div>
@@ -614,12 +732,18 @@ export default function AdminDashboard() {
                       <div className="flex flex-wrap items-center gap-3">
                         <h3 className="truncate text-xl font-semibold">{appointment.clientName}</h3>
                         <StatusBadge label={appointment.status} tone={getStatusTone(appointment.status)} />
+                        {appointment.sessionMode === 'online' ? <StatusBadge label="online" tone="accent" /> : null}
                       </div>
                       <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{userMap.get(appointment.clientId)?.email || 'No email available'}</p>
                       <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{format(parseStoredDate(appointment.date), 'MMMM d, yyyy')} - {formatSlot(appointment.timeSlot)} - {appointment.serviceType}</p>
+                      {appointment.sessionMode === 'online' ? (
+                        <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">
+                          {appointment.onlineSession?.url ? `${onlineProviderLabels[appointment.onlineSession.provider]} link ${appointment.onlineSession.visibleToClient ? 'visible' : 'hidden'}` : 'Online link pending'}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap gap-3">
-                      <button type="button" onClick={() => { setSelectedAppointment(appointment); setRescheduleDate(appointment.date); setRescheduleTime(''); }} className="theme-button-secondary">Manage</button>
+                      <button type="button" onClick={() => openAppointmentManager(appointment)} className="theme-button-secondary">Manage</button>
                       <button type="button" onClick={() => setNotesClient({ id: appointment.clientId, name: appointment.clientName })} className="theme-button-secondary">Notes</button>
                     </div>
                   </div>
@@ -628,7 +752,7 @@ export default function AdminDashboard() {
               )) : (
                 <EmptyState
                   title="No appointments match these filters"
-                  description="Adjust the search, date, service, or status filter to bring appointments back into view."
+                  description="No results for the selected filters."
                   action={<button type="button" onClick={() => setFilters({ search: '', status: 'all', service: 'all', date: '' })} className="theme-button-secondary">Clear filters</button>}
                 />
               )}
@@ -647,29 +771,71 @@ export default function AdminDashboard() {
               <SectionHeader
                 eyebrow="Availability"
                 title="Single-day scheduling"
-                description="Generate a working day, add one-off slots, or clear a date entirely."
+                description="Working hours, one-off slots, and date clearing."
               />
-              <input aria-label="Selected availability date" type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="theme-input" />
-              <div className="grid gap-4 md:grid-cols-2"><input aria-label="Availability start time" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="theme-input" /><input aria-label="Availability end time" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="theme-input" /></div>
+              <label className="admin-field">
+                <span className="admin-field__label">Date to edit</span>
+                <input aria-label="Selected availability date" type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="theme-input" />
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="admin-field">
+                  <span className="admin-field__label">Day start time</span>
+                  <input aria-label="Availability start time" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="theme-input" />
+                </label>
+                <label className="admin-field">
+                  <span className="admin-field__label">Day end time</span>
+                  <input aria-label="Availability end time" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="theme-input" />
+                </label>
+              </div>
               <div className="flex flex-wrap gap-3"><button type="button" onClick={handleGenerateDay} className="theme-button-primary">Generate day</button><button type="button" onClick={handleClearSelectedDate} className="theme-button-secondary">Clear date</button></div>
-              <div className="flex gap-3"><input aria-label="New availability slot time" type="time" value={newSlot} onChange={(event) => setNewSlot(event.target.value)} className="theme-input flex-1" /><button type="button" onClick={handleAddSlot} className="theme-button-secondary">Add slot</button></div>
+              <div className="flex items-end gap-3">
+                <label className="admin-field flex-1">
+                  <span className="admin-field__label">Single slot time</span>
+                  <input aria-label="New availability slot time" type="time" value={newSlot} onChange={(event) => setNewSlot(event.target.value)} className="theme-input" />
+                </label>
+                <button type="button" onClick={handleAddSlot} className="theme-button-secondary">Add slot</button>
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
-                {currentSlots.length > 0 ? currentSlots.map((slot) => <div key={slot} className="theme-panel-soft flex items-center justify-between p-3"><span>{slot}</span><button type="button" onClick={() => handleRemoveSlot(slot)} className="text-sm text-rose-600">Remove</button></div>) : <EmptyState title="No slots published for this date" description="Generate a full day or add individual slots to make this date bookable." />}
+                {currentSlots.length > 0 ? currentSlots.map((slot) => <div key={slot} className="theme-panel-soft flex items-center justify-between p-3"><span>{slot}</span><button type="button" onClick={() => handleRemoveSlot(slot)} className="text-sm text-rose-600">Remove</button></div>) : <EmptyState title="No slots published for this date" description="No available times on the selected date." />}
               </div>
             </section>
             <section className="space-y-8">
               <div className="theme-panel p-8 space-y-4">
                 <SectionHeader
                   eyebrow="Bulk tools"
-                  title="Range, recurring, and blocking tools"
-                  description="Publish dates in bulk, repeat weekly schedules, or block unavailable ranges."
+                  title="Range and recurring schedules"
+                  description="Bulk dates, weekly repeats, and blocked ranges."
                 />
-                <div className="grid gap-4 md:grid-cols-2"><input aria-label="Availability range start date" type="date" value={rangeStartDate} onChange={(event) => setRangeStartDate(event.target.value)} className="theme-input" /><input aria-label="Availability range end date" type="date" value={rangeEndDate} onChange={(event) => setRangeEndDate(event.target.value)} className="theme-input" /></div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="admin-field">
+                    <span className="admin-field__label">Availability range start</span>
+                    <input aria-label="Availability range start date" type="date" value={rangeStartDate} onChange={(event) => setRangeStartDate(event.target.value)} className="theme-input" />
+                  </label>
+                  <label className="admin-field">
+                    <span className="admin-field__label">Availability range end</span>
+                    <input aria-label="Availability range end date" type="date" value={rangeEndDate} onChange={(event) => setRangeEndDate(event.target.value)} className="theme-input" />
+                  </label>
+                </div>
                 <button type="button" onClick={handleGenerateRange} className="theme-button-primary">Generate range</button>
+                <div className="space-y-2">
+                  <p className="admin-field__label">Weekdays for recurring availability</p>
                 <div className="flex flex-wrap gap-2">{weekdayLabels.map((label, index) => <button key={label} type="button" onClick={() => toggleWeekday(index, setRecurringWeekdays)} className={`rounded-full px-3 py-2 text-sm ${recurringWeekdays.includes(index) ? 'bg-[rgb(var(--theme-primary-rgb))] text-white' : 'theme-panel-soft'}`}>{label}</button>)}</div>
+                </div>
                 <button type="button" onClick={handleGenerateRecurring} className="theme-button-secondary">Generate recurring</button>
-                <div className="grid gap-4 md:grid-cols-2"><input aria-label="Blocked range start date" type="date" value={blockStartDate} onChange={(event) => setBlockStartDate(event.target.value)} className="theme-input" /><input aria-label="Blocked range end date" type="date" value={blockEndDate} onChange={(event) => setBlockEndDate(event.target.value)} className="theme-input" /></div>
-                <textarea aria-label="Reason for blocking dates" value={blockReason} onChange={(event) => setBlockReason(event.target.value)} rows={3} className="theme-textarea" placeholder="Reason for blocking dates" />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="admin-field">
+                    <span className="admin-field__label">Blocked range start</span>
+                    <input aria-label="Blocked range start date" type="date" value={blockStartDate} onChange={(event) => setBlockStartDate(event.target.value)} className="theme-input" />
+                  </label>
+                  <label className="admin-field">
+                    <span className="admin-field__label">Blocked range end</span>
+                    <input aria-label="Blocked range end date" type="date" value={blockEndDate} onChange={(event) => setBlockEndDate(event.target.value)} className="theme-input" />
+                  </label>
+                </div>
+                <label className="admin-field">
+                  <span className="admin-field__label">Block reason</span>
+                  <textarea aria-label="Reason for blocking dates" value={blockReason} onChange={(event) => setBlockReason(event.target.value)} rows={3} className="theme-textarea" placeholder="Reason for blocking dates" />
+                </label>
                 <button type="button" onClick={handleBlockDates} className="theme-button-secondary">Block dates</button>
               </div>
             </section>
@@ -686,16 +852,19 @@ export default function AdminDashboard() {
             <section className="theme-panel p-8 space-y-4">
               <SectionHeader
                 eyebrow="Clients"
-                title="Search the client directory"
-                description="Open a client profile to see booking history, notes, and quick actions."
+                title="Client directory"
+                description="Profiles, booking history, notes, and actions."
               />
-              <input aria-label="Search clients" value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} placeholder="Search clients..." className="theme-input" />
+              <label className="admin-field">
+                <span className="admin-field__label">Client search</span>
+                <input aria-label="Search clients" value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} placeholder="Search clients..." className="theme-input" />
+              </label>
               {filteredClients.length > 0 ? filteredClients.map((client) => (
                 <button key={client.id} type="button" onClick={() => setSelectedClientId(client.id)} className={`w-full rounded-[calc(var(--theme-radius-md)+0.08rem)] border px-4 py-4 text-left ${selectedClientId === client.id ? 'border-[rgb(var(--theme-primary-rgb)/0.55)] bg-[rgb(var(--theme-primary-rgb)/0.08)]' : 'border-[rgb(var(--theme-line-rgb)/0.2)] bg-[rgb(var(--theme-surface-rgb)/0.6)]'}`}>
                   <p className="font-semibold">{client.name || 'Client'}</p>
                   <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{client.email}</p>
                 </button>
-              )) : <EmptyState title="No matching clients" description="Try a different name or email to find the client you need." />}
+              )) : <EmptyState title="No matching clients" description="No clients match this search." />}
             </section>
             <section className="theme-panel p-8">
               {selectedClient ? (
@@ -703,7 +872,7 @@ export default function AdminDashboard() {
                   <SectionHeader
                     eyebrow="Selected client"
                     title={selectedClient.name || 'Client profile'}
-                    description="Review this client's booking history, create a new appointment, or jump into notes."
+                    description="Booking history, appointments, and notes."
                     actions={<div className="flex flex-wrap gap-3"><button type="button" onClick={() => openComposerForClient(selectedClient.id)} className="theme-button-primary">Create booking</button><button type="button" onClick={() => setNotesClient({ id: selectedClient.id, name: selectedClient.name || 'Client' })} className="theme-button-secondary">Open notes</button></div>}
                   />
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -721,12 +890,12 @@ export default function AdminDashboard() {
                     {selectedClientAppointments.length > 0 ? selectedClientAppointments.map((appointment) => (
                       <div key={appointment.id} className="theme-panel-soft p-4">
                         <p className="font-semibold">{format(parseStoredDate(appointment.date), 'MMMM d, yyyy')} - {formatSlot(appointment.timeSlot)}</p>
-                        <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{appointment.serviceType} - {appointment.status}</p>
+                        <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{appointment.serviceType} - {appointment.status}{appointment.sessionMode === 'online' ? ' - online' : ''}</p>
                       </div>
-                    )) : <EmptyState title="No bookings for this client yet" description="Create the first appointment from this client profile when needed." />}
+                    )) : <EmptyState title="No bookings for this client yet" description="No client appointment records." />}
                   </div>
                 </div>
-              ) : <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">Select a client to inspect their profile and booking history.</p>}
+              ) : <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">Select a client.</p>}
             </section>
           </div>
         )}
@@ -750,8 +919,8 @@ export default function AdminDashboard() {
             <section className="theme-panel p-8">
               <SectionHeader
                 eyebrow="Media"
-                title="Upload and assign website media"
-                description="Add images to the library, update labels, and assign assets to live website slots."
+                title="Website media"
+                description="Library uploads, labels, and live media slots."
               />
               <div className="admin-media-upload-grid">
                 <label className="admin-field">
@@ -759,11 +928,11 @@ export default function AdminDashboard() {
                   <input type="file" accept="image/*" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} className="theme-input" />
                 </label>
                 <label className="admin-field">
-                  <span className="admin-field__label">Label</span>
+                  <span className="admin-field__label">Media display label</span>
                   <input value={uploadLabel} onChange={(event) => setUploadLabel(event.target.value)} placeholder="Homepage hero 01" className="theme-input" />
                 </label>
                 <label className="admin-field">
-                  <span className="admin-field__label">Category</span>
+                  <span className="admin-field__label">Media category</span>
                   <input value={uploadCategory} onChange={(event) => setUploadCategory(event.target.value)} placeholder="hero" className="theme-input" />
                 </label>
                 <button type="button" onClick={handleMediaUpload} disabled={!uploadFile || isBusy} className="theme-button-primary disabled:opacity-50">Upload</button>
@@ -786,8 +955,14 @@ export default function AdminDashboard() {
                         <span className="admin-media-chip admin-media-chip--muted">Unused</span>
                       )}
                     </div>
-                    <input aria-label={`Label for ${asset.label}`} value={mediaDrafts[asset.id]?.label || asset.label} onChange={(event) => setMediaDrafts((current) => ({ ...current, [asset.id]: { label: event.target.value, category: current[asset.id]?.category || asset.category } }))} className="theme-input" />
-                    <input aria-label={`Category for ${asset.label}`} value={mediaDrafts[asset.id]?.category || asset.category} onChange={(event) => setMediaDrafts((current) => ({ ...current, [asset.id]: { label: current[asset.id]?.label || asset.label, category: event.target.value } }))} className="theme-input" />
+                    <label className="admin-field">
+                      <span className="admin-field__label">Media label</span>
+                      <input aria-label={`Label for ${asset.label}`} value={mediaDrafts[asset.id]?.label || asset.label} onChange={(event) => setMediaDrafts((current) => ({ ...current, [asset.id]: { label: event.target.value, category: current[asset.id]?.category || asset.category } }))} className="theme-input" />
+                    </label>
+                    <label className="admin-field">
+                      <span className="admin-field__label">Media category</span>
+                      <input aria-label={`Category for ${asset.label}`} value={mediaDrafts[asset.id]?.category || asset.category} onChange={(event) => setMediaDrafts((current) => ({ ...current, [asset.id]: { label: current[asset.id]?.label || asset.label, category: event.target.value } }))} className="theme-input" />
+                    </label>
                     <div className="admin-media-actions">
                       <button type="button" onClick={() => handleMediaMetaSave(asset.id)} className="theme-button-secondary">Save details</button>
                       <button type="button" onClick={() => handleMediaAssign('heroPrimaryUrl', asset)} className="theme-button-secondary">Set hero image</button>
@@ -799,7 +974,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 </article>
-              )}) : <EmptyState title="No media uploaded yet" description="Upload the first image here to start assigning hero, art, or consultation visuals." />}
+              )}) : <EmptyState title="No media uploaded yet" description="No media library assets." />}
             </div>
           </div>
         )}
@@ -810,28 +985,31 @@ export default function AdminDashboard() {
               <SectionHeader
                 eyebrow="Admins"
                 title="Current admins"
-                description="Every admin has full access to bookings, publishing, settings, media, and user management."
+                description="Full access accounts."
               />
               {adminUsers.length > 0 ? adminUsers.map((entry) => (
                 <div key={entry.id} className="theme-panel-soft flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div><p className="font-semibold">{entry.name || 'Admin'}</p><p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{entry.email}</p></div>
                   {entry.id !== user?.uid ? <button type="button" onClick={() => handleRoleChange(entry, 'client')} className="rounded-full bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">Revoke admin</button> : <span className="text-xs uppercase tracking-[0.16em] text-[rgb(var(--theme-muted-rgb))]">Current session</span>}
                 </div>
-              )) : <EmptyState title="No admins found" description="The bootstrap admin should appear here once the users collection is available." />}
+              )) : <EmptyState title="No admins found" description="No admin accounts found." />}
             </section>
             <section className="theme-panel p-8 space-y-4">
               <SectionHeader
                 eyebrow="Permissions"
-                title="Promote signed-in users"
-                description="Search by name or email, then promote a signed-in user to full admin access."
+                title="User permissions"
+                description="Signed-in user role management."
               />
-              <input aria-label="Search users to promote" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} placeholder="Search users..." className="theme-input" />
+              <label className="admin-field">
+                <span className="admin-field__label">User search</span>
+                <input aria-label="Search users to promote" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} placeholder="Search users..." className="theme-input" />
+              </label>
               {filteredUsersForAdmin.length > 0 ? filteredUsersForAdmin.map((entry) => (
                 <div key={entry.id} className="theme-panel-soft flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div><p className="font-semibold">{entry.name || 'User'}</p><p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{entry.email}</p></div>
                   {entry.role === 'admin' ? <span className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Admin</span> : <button type="button" onClick={() => handleRoleChange(entry, 'admin')} className="theme-button-primary">Promote to admin</button>}
                 </div>
-              )) : <EmptyState title="No users match this search" description="Try a different search term to find the user you want to promote." />}
+              )) : <EmptyState title="No users match this search" description="No users match this search." />}
             </section>
           </div>
         )}
@@ -842,17 +1020,17 @@ export default function AdminDashboard() {
               <SectionHeader
                 eyebrow="Analytics"
                 title="Service demand"
-                description="A quick breakdown of how many appointments have been booked for each service type."
+                description="Appointments by service type."
               />
-              {serviceDemand.length > 0 ? serviceDemand.map((entry) => <div key={entry.serviceType} className="theme-panel-soft flex items-center justify-between p-4"><p className="font-medium">{entry.serviceType}</p><p className="text-lg font-semibold">{entry.count}</p></div>) : <EmptyState title="No service data yet" description="As appointments are created, service demand will start to appear here." />}
+              {serviceDemand.length > 0 ? serviceDemand.map((entry) => <div key={entry.serviceType} className="theme-panel-soft flex items-center justify-between p-4"><p className="font-medium">{entry.serviceType}</p><p className="text-lg font-semibold">{entry.count}</p></div>) : <EmptyState title="No service data yet" description="No appointment service records." />}
             </section>
             <section className="theme-panel p-8 space-y-3">
               <SectionHeader
                 eyebrow="Trend"
                 title="Booking trend"
-                description="Recent booking volume by month for a quick sense of cadence."
+                description="Monthly booking volume."
               />
-              {monthlyTrend.length > 0 ? monthlyTrend.map(([month, count]) => <div key={month} className="theme-panel-soft flex items-center justify-between p-4"><p className="font-medium">{month}</p><p className="text-lg font-semibold">{count}</p></div>) : <EmptyState title="No trend data yet" description="Monthly booking volume will appear here as appointments accumulate." />}
+              {monthlyTrend.length > 0 ? monthlyTrend.map(([month, count]) => <div key={month} className="theme-panel-soft flex items-center justify-between p-4"><p className="font-medium">{month}</p><p className="text-lg font-semibold">{count}</p></div>) : <EmptyState title="No trend data yet" description="No monthly booking records." />}
             </section>
           </div>
         )}
@@ -862,15 +1040,24 @@ export default function AdminDashboard() {
             <SectionHeader
               eyebrow="Practice settings"
               title="Default scheduling rules"
-              description="Set days off, session duration, and buffer time for future generated availability."
+              description="Days off, session duration, and buffer time."
             />
             <form onSubmit={handleSavePracticeSettings} className="space-y-6">
-              <div className="flex flex-wrap gap-3">
+              <div className="space-y-2">
+                <p className="admin-field__label">Days off</p>
+                <div className="flex flex-wrap gap-3">
                 {weekdayLabels.map((label, index) => <button key={label} type="button" onClick={() => setSettings((current) => ({ ...current, daysOff: current.daysOff.includes(index) ? current.daysOff.filter((entry) => entry !== index) : [...current.daysOff, index].sort() }))} className={`rounded-full px-4 py-2 text-sm font-medium ${settings.daysOff.includes(index) ? 'bg-rose-50 text-rose-600' : 'theme-panel-soft'}`}>{label}</button>)}
+                </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <input aria-label="Default session duration in minutes" type="number" min="15" step="15" value={settings.defaultDuration} onChange={(event) => setSettings((current) => ({ ...current, defaultDuration: Number(event.target.value) || 45 }))} className="theme-input" />
-                <input aria-label="Buffer time in minutes" type="number" min="0" step="5" value={settings.bufferTime} onChange={(event) => setSettings((current) => ({ ...current, bufferTime: Number(event.target.value) || 0 }))} className="theme-input" />
+                <label className="admin-field">
+                  <span className="admin-field__label">Session duration minutes</span>
+                  <input aria-label="Default session duration in minutes" type="number" min="15" step="15" value={settings.defaultDuration} onChange={(event) => setSettings((current) => ({ ...current, defaultDuration: Number(event.target.value) || 45 }))} className="theme-input" />
+                </label>
+                <label className="admin-field">
+                  <span className="admin-field__label">Buffer time minutes</span>
+                  <input aria-label="Buffer time in minutes" type="number" min="0" step="5" value={settings.bufferTime} onChange={(event) => setSettings((current) => ({ ...current, bufferTime: Number(event.target.value) || 0 }))} className="theme-input" />
+                </label>
               </div>
               <button type="submit" disabled={isSavingSettings} className="theme-button-primary disabled:opacity-50">{isSavingSettings ? 'Saving...' : 'Save practice settings'}</button>
             </form>
@@ -882,29 +1069,77 @@ export default function AdminDashboard() {
             <SectionHeader
               eyebrow="Audit"
               title="Full audit trail"
-              description="Every logged admin action is listed here with timing and actor information."
+              description="Logged admin actions, timestamps, and actor details."
             />
             {auditLogs.length > 0 ? auditLogs.map((log) => (
               <article key={log.id} className="theme-panel p-5">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-                  <div><p className="font-semibold">{log.action}</p><p className="mt-2 text-sm text-[rgb(var(--theme-muted-rgb))]">{log.details}</p></div>
-                  <div className="text-sm text-[rgb(var(--theme-muted-rgb))]"><p>{log.adminEmail}</p><p>{log.timestamp?.toDate ? format(log.timestamp.toDate(), 'MMM d, yyyy HH:mm') : 'Just now'}</p></div>
+                  <div>
+                    <p className="font-semibold">{log.action}</p>
+                    <p className="mt-2 text-sm text-[rgb(var(--theme-muted-rgb))]">{log.details}</p>
+                  </div>
+                  <div className="text-sm text-[rgb(var(--theme-muted-rgb))]"><p>{log.adminEmail}</p><p>{formatAuditTimestamp(log.timestamp)}</p></div>
                 </div>
               </article>
-            )) : <EmptyState title="No audit entries yet" description="Once admin actions are logged, the full trail will appear here." />}
+            )) : <EmptyState title="No audit entries yet" description="No logged admin actions." />}
           </section>
         )}
+
       </div>
 
       {composerOpen && (
         <ModalShell title="Create booking for a client" onClose={() => setComposerOpen(false)}>
           <div className="grid gap-4 md:grid-cols-2">
-            <select aria-label="Client for the new booking" value={composerState.clientId} onChange={(event) => setComposerState((current) => ({ ...current, clientId: event.target.value }))} className="theme-select"><option value="">Select client</option>{clientUsers.map((entry) => <option key={entry.id} value={entry.id}>{entry.name || entry.email} - {entry.email}</option>)}</select>
-            <input aria-label="Booking date" type="date" value={composerState.date} onChange={(event) => setComposerState((current) => ({ ...current, date: event.target.value, timeSlot: '' }))} className="theme-input" />
-            <select aria-label="Booking time slot" value={composerState.timeSlot} onChange={(event) => setComposerState((current) => ({ ...current, timeSlot: event.target.value }))} className="theme-select"><option value="">Select slot</option>{composerSlots.map((slot) => <option key={slot} value={slot}>{formatSlot(slot)}</option>)}</select>
-            <input aria-label="Service type" value={composerState.serviceType} onChange={(event) => setComposerState((current) => ({ ...current, serviceType: event.target.value }))} placeholder="Service type" className="theme-input" />
+            <label className="admin-field">
+              <span className="admin-field__label">Client</span>
+              <select aria-label="Client for the new booking" value={composerState.clientId} onChange={(event) => setComposerState((current) => ({ ...current, clientId: event.target.value }))} className="theme-select"><option value="">Select client</option>{clientUsers.map((entry) => <option key={entry.id} value={entry.id}>{entry.name || entry.email} - {entry.email}</option>)}</select>
+            </label>
+            <label className="admin-field">
+              <span className="admin-field__label">Appointment date</span>
+              <input aria-label="Booking date" type="date" value={composerState.date} onChange={(event) => setComposerState((current) => ({ ...current, date: event.target.value, timeSlot: '' }))} className="theme-input" />
+            </label>
+            <label className="admin-field">
+              <span className="admin-field__label">Available time slot</span>
+              <select aria-label="Booking time slot" value={composerState.timeSlot} onChange={(event) => setComposerState((current) => ({ ...current, timeSlot: event.target.value }))} className="theme-select"><option value="">Select slot</option>{composerSlots.map((slot) => <option key={slot} value={slot}>{formatSlot(slot)}</option>)}</select>
+            </label>
+            <label className="admin-field">
+              <span className="admin-field__label">Service type</span>
+              <input aria-label="Service type" value={composerState.serviceType} onChange={(event) => setComposerState((current) => ({ ...current, serviceType: event.target.value }))} placeholder="Service type" className="theme-input" />
+            </label>
+            <label className="admin-field">
+              <span className="admin-field__label">Session type</span>
+              <select aria-label="Session type" value={composerState.sessionMode} onChange={(event) => setComposerState((current) => ({ ...current, sessionMode: event.target.value as ComposerState['sessionMode'] }))} className="theme-select">
+                <option value="in_person">In person</option>
+                <option value="online">Online</option>
+              </select>
+            </label>
           </div>
-          <textarea aria-label="Internal booking notes" value={composerState.notes} onChange={(event) => setComposerState((current) => ({ ...current, notes: event.target.value }))} rows={4} className="theme-textarea mt-4" placeholder="Notes" />
+          {composerState.sessionMode === 'online' ? (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label className="admin-field">
+                <span className="admin-field__label">Meeting provider</span>
+                <select aria-label="Meeting provider" value={composerState.onlineProvider} onChange={(event) => setComposerState((current) => ({ ...current, onlineProvider: event.target.value as ComposerState['onlineProvider'] }))} className="theme-select">
+                  {Object.entries(onlineProviderLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <label className="admin-field">
+                <span className="admin-field__label">Meeting link</span>
+                <input aria-label="Meeting link" type="url" value={composerState.onlineUrl} onChange={(event) => setComposerState((current) => ({ ...current, onlineUrl: event.target.value }))} placeholder="https://..." className="theme-input" />
+              </label>
+              <label className="admin-field md:col-span-2">
+                <span className="admin-field__label">Join notes</span>
+                <textarea aria-label="Join notes" value={composerState.onlineNotes} onChange={(event) => setComposerState((current) => ({ ...current, onlineNotes: event.target.value }))} rows={3} className="theme-textarea" placeholder="Optional joining details" />
+              </label>
+              <label className="flex items-center gap-3 text-sm font-semibold text-[rgb(var(--theme-text-rgb))] md:col-span-2">
+                <input type="checkbox" checked={composerState.onlineVisibleToClient} onChange={(event) => setComposerState((current) => ({ ...current, onlineVisibleToClient: event.target.checked }))} />
+                Show meeting link in client dashboard
+              </label>
+            </div>
+          ) : null}
+          <label className="admin-field mt-4">
+            <span className="admin-field__label">Internal booking notes</span>
+            <textarea aria-label="Internal booking notes" value={composerState.notes} onChange={(event) => setComposerState((current) => ({ ...current, notes: event.target.value }))} rows={4} className="theme-textarea" placeholder="Notes" />
+          </label>
           <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setComposerOpen(false)} className="theme-button-secondary">Cancel</button><button type="button" onClick={handleAdminBooking} disabled={isBusy} className="theme-button-primary disabled:opacity-50">Create booking</button></div>
         </ModalShell>
       )}
@@ -924,10 +1159,49 @@ export default function AdminDashboard() {
               <button type="button" onClick={() => handleStatusUpdate(selectedAppointment.id, 'cancelled')} className="rounded-full bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-600">Cancel appointment</button>
             </div>
             <div className="theme-panel-soft p-5">
+              <p className="font-semibold">Online session</p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <label className="admin-field">
+                  <span className="admin-field__label">Session type</span>
+                  <select aria-label="Managed appointment session type" value={sessionModeDraft} onChange={(event) => setSessionModeDraft(event.target.value as AppointmentRecord['sessionMode'])} className="theme-select">
+                    <option value="in_person">In person</option>
+                    <option value="online">Online</option>
+                  </select>
+                </label>
+                <label className="admin-field">
+                  <span className="admin-field__label">Meeting provider</span>
+                  <select aria-label="Managed appointment meeting provider" value={onlineProviderDraft} onChange={(event) => setOnlineProviderDraft(event.target.value as typeof onlineProviderDraft)} disabled={sessionModeDraft !== 'online'} className="theme-select disabled:opacity-60">
+                    {Object.entries(onlineProviderLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </label>
+                <label className="admin-field md:col-span-2">
+                  <span className="admin-field__label">Meeting link</span>
+                  <input aria-label="Managed appointment meeting link" type="url" value={onlineUrlDraft} onChange={(event) => setOnlineUrlDraft(event.target.value)} disabled={sessionModeDraft !== 'online'} placeholder="https://..." className="theme-input disabled:opacity-60" />
+                </label>
+                <label className="admin-field md:col-span-2">
+                  <span className="admin-field__label">Join notes</span>
+                  <textarea aria-label="Managed appointment join notes" value={onlineNotesDraft} onChange={(event) => setOnlineNotesDraft(event.target.value)} disabled={sessionModeDraft !== 'online'} rows={3} className="theme-textarea disabled:opacity-60" placeholder="Optional joining details" />
+                </label>
+                <label className="flex items-center gap-3 text-sm font-semibold text-[rgb(var(--theme-text-rgb))] md:col-span-2">
+                  <input type="checkbox" checked={onlineVisibleDraft} onChange={(event) => setOnlineVisibleDraft(event.target.checked)} disabled={sessionModeDraft !== 'online'} />
+                  Show meeting link in client dashboard
+                </label>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button type="button" onClick={handleOnlineSessionSave} disabled={isBusy} className="theme-button-secondary disabled:opacity-50">Save online session</button>
+              </div>
+            </div>
+            <div className="theme-panel-soft p-5">
               <p className="font-semibold">Reschedule</p>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <input aria-label="New appointment date" type="date" value={rescheduleDate} onChange={(event) => { setRescheduleDate(event.target.value); setRescheduleTime(''); }} className="theme-input" />
-                <select aria-label="New appointment time slot" value={rescheduleTime} onChange={(event) => setRescheduleTime(event.target.value)} className="theme-select"><option value="">Select new slot</option>{rescheduleSlots.map((slot) => <option key={slot} value={slot}>{formatSlot(slot)}</option>)}</select>
+                <label className="admin-field">
+                  <span className="admin-field__label">New appointment date</span>
+                  <input aria-label="New appointment date" type="date" value={rescheduleDate} onChange={(event) => { setRescheduleDate(event.target.value); setRescheduleTime(''); }} className="theme-input" />
+                </label>
+                <label className="admin-field">
+                  <span className="admin-field__label">New available time slot</span>
+                  <select aria-label="New appointment time slot" value={rescheduleTime} onChange={(event) => setRescheduleTime(event.target.value)} className="theme-select"><option value="">Select new slot</option>{rescheduleSlots.map((slot) => <option key={slot} value={slot}>{formatSlot(slot)}</option>)}</select>
+                </label>
               </div>
               <div className="mt-4 flex justify-end"><button type="button" onClick={handleAdminReschedule} disabled={!rescheduleTime || isBusy} className="theme-button-primary disabled:opacity-50">Reschedule appointment</button></div>
             </div>

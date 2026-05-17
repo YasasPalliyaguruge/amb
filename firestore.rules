@@ -33,6 +33,15 @@ service cloud.firestore {
       return value == null || (value is string && value.size() <= max);
     }
 
+    function isHttpsUrl(value) {
+      return value is string &&
+        value.size() <= 2000 &&
+        (
+          value.size() == 0 ||
+          value.matches('https://.*')
+        );
+    }
+
     function hasOnlyUserKeys(data) {
       return data.keys().hasOnly([
         'name',
@@ -92,8 +101,32 @@ service cloud.firestore {
         'timeSlot',
         'serviceType',
         'status',
-        'notes'
+        'notes',
+        'sessionMode',
+        'onlineSession'
       ]);
+    }
+
+    function hasValidOnlineSessionFields(data) {
+      return data == null || (
+        data is map &&
+        data.keys().hasOnly([
+          'provider',
+          'url',
+          'visibleToClient',
+          'notes'
+        ]) &&
+        (
+          data.provider == 'zoom' ||
+          data.provider == 'teams' ||
+          data.provider == 'google_meet' ||
+          data.provider == 'jitsi' ||
+          data.provider == 'other'
+        ) &&
+        isHttpsUrl(data.url) &&
+        data.visibleToClient is bool &&
+        isOptionalShortString(data.notes, 500)
+      );
     }
 
     function hasValidAppointmentFields(data) {
@@ -109,14 +142,21 @@ service cloud.firestore {
           data.status == 'cancelled'
         ) &&
         data.notes is string &&
-        data.notes.size() <= 1000;
+        data.notes.size() <= 1000 &&
+        (
+          data.get('sessionMode', 'in_person') == 'in_person' ||
+          data.get('sessionMode', 'in_person') == 'online'
+        ) &&
+        hasValidOnlineSessionFields(data.get('onlineSession', null));
     }
 
     function preservesAppointmentIdentity() {
       return request.resource.data.clientId == resource.data.clientId &&
         request.resource.data.clientName == resource.data.clientName &&
         request.resource.data.serviceType == resource.data.serviceType &&
-        request.resource.data.notes == resource.data.notes;
+        request.resource.data.notes == resource.data.notes &&
+        request.resource.data.get('sessionMode', 'in_person') == resource.data.get('sessionMode', 'in_person') &&
+        request.resource.data.get('onlineSession', null) == resource.data.get('onlineSession', null);
     }
 
     function isClientCancellation() {

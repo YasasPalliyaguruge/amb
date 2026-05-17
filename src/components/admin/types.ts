@@ -19,6 +19,15 @@ export interface AppointmentRecord {
   serviceType: string;
   status: 'scheduled' | 'completed' | 'cancelled';
   notes: string;
+  sessionMode?: 'in_person' | 'online';
+  onlineSession?: OnlineSession | null;
+}
+
+export interface OnlineSession {
+  provider: 'zoom' | 'teams' | 'google_meet' | 'jitsi' | 'other';
+  url: string;
+  visibleToClient: boolean;
+  notes: string;
 }
 
 export interface UserRecord {
@@ -49,6 +58,11 @@ export interface ComposerState {
   timeSlot: string;
   serviceType: string;
   notes: string;
+  sessionMode: 'in_person' | 'online';
+  onlineProvider: OnlineSession['provider'];
+  onlineUrl: string;
+  onlineVisibleToClient: boolean;
+  onlineNotes: string;
 }
 
 export const adminTabs: Array<{ id: AdminTab; label: string }> = [

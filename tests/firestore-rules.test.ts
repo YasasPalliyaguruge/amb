@@ -17,5 +17,13 @@ describe('firestore rules hardening', () => {
     expect(rules).toContain('function preservesAppointmentIdentity()');
     expect(rules).toContain('request.resource.data.clientId == resource.data.clientId');
     expect(rules).toContain('request.resource.data.serviceType == resource.data.serviceType');
+    expect(rules).toContain("request.resource.data.get('onlineSession', null) == resource.data.get('onlineSession', null)");
+  });
+
+  it('validates optional online session metadata on appointments', () => {
+    expect(rules).toContain('function hasValidOnlineSessionFields(data)');
+    expect(rules).toContain("data.provider == 'zoom'");
+    expect(rules).toContain("data.provider == 'teams'");
+    expect(rules).toContain("value.matches('https://.*')");
   });
 });

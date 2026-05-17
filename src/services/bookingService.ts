@@ -147,6 +147,13 @@ interface BookingPayload {
   clientEmail: string;
   serviceType: string;
   notes?: string;
+  sessionMode?: 'in_person' | 'online';
+  onlineSession?: {
+    provider: 'zoom' | 'teams' | 'google_meet' | 'jitsi' | 'other';
+    url: string;
+    visibleToClient: boolean;
+    notes: string;
+  } | null;
 }
 
 async function queueBookingMail(
@@ -207,6 +214,8 @@ async function createAppointmentBooking(
           serviceType: payload.serviceType,
           status: 'scheduled',
           notes: payload.notes || '',
+          sessionMode: payload.sessionMode || 'in_person',
+          onlineSession: payload.sessionMode === 'online' ? payload.onlineSession || null : null,
         });
       })
     );
@@ -224,7 +233,8 @@ export async function bookConsultation(
   clientName: string,
   clientEmail: string,
   serviceType: string,
-  notes: string = ''
+  notes: string = '',
+  sessionMode: BookingPayload['sessionMode'] = 'in_person'
 ): Promise<{ success: boolean; appointmentId: string; notificationState: BookingNotificationState }> {
   const safeClientName = escapeHtml(clientName);
   const safeServiceType = escapeHtml(serviceType);
@@ -236,6 +246,15 @@ export async function bookConsultation(
     clientEmail,
     serviceType,
     notes,
+    sessionMode,
+    onlineSession: sessionMode === 'online'
+      ? {
+          provider: 'other',
+          url: '',
+          visibleToClient: false,
+          notes: '',
+        }
+      : null,
   });
 
   const notificationState = await queueBookingMail(
