@@ -379,7 +379,24 @@ export default function AdminDashboard() {
       setIsBusy(false);
     }
   };
-  const handleStatusUpdate = async (appointmentId: string, nextStatus: AppointmentRecord['status']) => { if (!user) return; try { await updateAppointmentStatus(appointmentId, nextStatus, user.uid, true); toast.success('Appointment updated'); } catch (error: any) { toast.error(error.message || 'Failed to update appointment'); } };
+  const handleStatusUpdate = async (appointment: AppointmentRecord, nextStatus: AppointmentRecord['status']) => {
+    if (!user) return;
+
+    try {
+      await updateAppointmentStatus(appointment.id, nextStatus, user.uid, true, {
+        clientName: appointment.clientName,
+        clientEmail: userMap.get(appointment.clientId)?.email || '',
+        date: appointment.date,
+        timeSlot: appointment.timeSlot,
+        serviceType: appointment.serviceType,
+        sessionMode: appointment.sessionMode,
+        onlineSession: appointment.onlineSession,
+      });
+      toast.success('Appointment updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update appointment');
+    }
+  };
   const handleOnlineSessionSave = async () => {
     if (!user || !selectedAppointment) return;
 
@@ -1154,9 +1171,9 @@ export default function AdminDashboard() {
               {selectedAppointment.notes ? <p className="mt-3 text-sm text-[rgb(var(--theme-muted-rgb))]">Notes: {selectedAppointment.notes}</p> : null}
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <button type="button" onClick={() => handleStatusUpdate(selectedAppointment.id, 'scheduled')} className="theme-button-secondary">Keep scheduled</button>
-              <button type="button" onClick={() => handleStatusUpdate(selectedAppointment.id, 'completed')} className="theme-button-secondary">Mark completed</button>
-              <button type="button" onClick={() => handleStatusUpdate(selectedAppointment.id, 'cancelled')} className="rounded-full bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-600">Cancel appointment</button>
+              <button type="button" onClick={() => handleStatusUpdate(selectedAppointment, 'scheduled')} className="theme-button-secondary">Keep scheduled</button>
+              <button type="button" onClick={() => handleStatusUpdate(selectedAppointment, 'completed')} className="theme-button-secondary">Mark completed</button>
+              <button type="button" onClick={() => handleStatusUpdate(selectedAppointment, 'cancelled')} className="rounded-full bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-600">Cancel appointment</button>
             </div>
             <div className="theme-panel-soft p-5">
               <p className="font-semibold">Online session</p>

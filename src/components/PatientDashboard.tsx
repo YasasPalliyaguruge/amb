@@ -165,9 +165,18 @@ export default function PatientDashboard() {
 
   const handleCancelAppointment = async (appointmentId: string) => {
     if (!user) return;
+    const appointment = appointments.find((entry) => entry.id === appointmentId);
 
     try {
-      await updateAppointmentStatus(appointmentId, 'cancelled', user.uid);
+      await updateAppointmentStatus(appointmentId, 'cancelled', user.uid, false, appointment ? {
+        clientName: appointment.clientName,
+        clientEmail: user.email || '',
+        date: appointment.date,
+        timeSlot: appointment.timeSlot,
+        serviceType: appointment.serviceType,
+        sessionMode: appointment.sessionMode,
+        onlineSession: appointment.onlineSession,
+      } : { clientEmail: user.email || '' });
       toast.success('Appointment cancelled successfully');
       setCancellingId(null);
     } catch (cancelError: any) {

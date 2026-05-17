@@ -97,6 +97,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
         'clientId',
         'clientName',
+        'clientEmail',
         'date',
         'timeSlot',
         'serviceType',
@@ -133,6 +134,7 @@ service cloud.firestore {
       return hasOnlyAppointmentKeys(data) &&
         isShortString(data.clientId, 1, 128) &&
         isShortString(data.clientName, 1, 120) &&
+        isOptionalShortString(data.get('clientEmail', ''), 320) &&
         isShortString(data.date, 8, 16) &&
         isShortString(data.timeSlot, 3, 16) &&
         isShortString(data.serviceType, 1, 120) &&
@@ -153,6 +155,7 @@ service cloud.firestore {
     function preservesAppointmentIdentity() {
       return request.resource.data.clientId == resource.data.clientId &&
         request.resource.data.clientName == resource.data.clientName &&
+        request.resource.data.get('clientEmail', '') == resource.data.get('clientEmail', '') &&
         request.resource.data.serviceType == resource.data.serviceType &&
         request.resource.data.notes == resource.data.notes &&
         request.resource.data.get('sessionMode', 'in_person') == resource.data.get('sessionMode', 'in_person') &&

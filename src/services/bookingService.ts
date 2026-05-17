@@ -1,10 +1,20 @@
 import { addDoc, collection, doc, runTransaction } from 'firebase/firestore';
 import type { FirebaseError } from 'firebase/app';
 import { db } from '../firebase-db';
+import { BOOTSTRAP_ADMIN_EMAIL } from '../config/admin';
 import { isTodayOrFutureStoredDate } from '../utils/date';
 
 export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';
 export type BookingNotificationState = 'queued' | 'failed' | 'skipped';
+
+type SessionMode = 'in_person' | 'online';
+
+interface OnlineSessionPayload {
+  provider: 'zoom' | 'teams' | 'google_meet' | 'jitsi' | 'other';
+  url: string;
+  visibleToClient: boolean;
+  notes: string;
+}
 
 const TRANSIENT_BOOKING_ERROR_CODES = new Set([
   'aborted',
@@ -147,13 +157,18 @@ interface BookingPayload {
   clientEmail: string;
   serviceType: string;
   notes?: string;
-  sessionMode?: 'in_person' | 'online';
-  onlineSession?: {
-    provider: 'zoom' | 'teams' | 'google_meet' | 'jitsi' | 'other';
-    url: string;
-    visibleToClient: boolean;
-    notes: string;
-  } | null;
+  sessionMode?: SessionMode;
+  onlineSession?: OnlineSessionPayload | null;
+}
+
+interface AppointmentEmailDetails {
+  clientName: string;
+  clientEmail?: string;
+  date: string;
+  timeSlot: string;
+  serviceType: string;
+  sessionMode?: SessionMode;
+  onlineSession?: OnlineSessionPayload | null;
 }
 
 async function queueBookingMail(
@@ -180,6 +195,133 @@ async function queueBookingMail(
     console.warn('[bookingService] Mail queue failed:', mailError);
     return 'failed';
   }
+}
+
+async function queueAdminMail(subject: string, html: string, text: string): Promise<void> {
+  try {
+    await queueBookingMail(BOOTSTRAP_ADMIN_EMAIL, subject, html, text);
+  } catch (mailError) {
+    console.warn('[bookingService] Admin mail queue failed:', mailError);
+  }
+}
+
+function formatSessionMode(mode: SessionMode | undefined) {
+  return mode === 'online' ? 'Online' : 'In person';
+}
+
+function getMeetingProviderLabel(provider: OnlineSessionPayload['provider']) {
+  switch (provider) {
+    case 'zoom':
+      return 'Zoom';
+    case 'teams':
+      return 'Microsoft Teams';
+    case 'google_meet':
+      return 'Google Meet';
+    case 'jitsi':
+      return 'Jitsi';
+    default:
+      return 'Online meeting';
+  }
+}
+
+function getClientSessionLine(details: AppointmentEmailDetails) {
+  if (details.sessionMode !== 'online') {
+    return 'Session: In person';
+  }
+
+  if (details.onlineSession?.visibleToClient && details.onlineSession.url) {
+    return `Session: ${getMeetingProviderLabel(details.onlineSession.provider)} - ${details.onlineSession.url}`;
+  }
+
+  return 'Session: Online - meeting link will be shared in your client dashboard once confirmed.';
+}
+
+function getClientSessionHtml(details: AppointmentEmailDetails) {
+  if (details.sessionMode !== 'online') {
+    return '<p><strong>Session:</strong> In person</p>';
+  }
+
+  if (details.onlineSession?.visibleToClient && details.onlineSession.url) {
+    const providerLabel = escapeHtml(getMeetingProviderLabel(details.onlineSession.provider));
+    const safeUrl = escapeHtml(details.onlineSession.url);
+    const notes = details.onlineSession.notes
+      ? `<p><strong>Join notes:</strong> ${escapeHtml(details.onlineSession.notes)}</p>`
+      : '';
+
+    return `<p><strong>Session:</strong> ${providerLabel}</p><p><a href="${safeUrl}">Join session</a></p>${notes}`;
+  }
+
+  return '<p><strong>Session:</strong> Online</p><p>The meeting link will be shared in your client dashboard once confirmed.</p>';
+}
+
+function buildClientEmail(
+  title: string,
+  intro: string,
+  details: AppointmentEmailDetails
+) {
+  const safeClientName = escapeHtml(details.clientName);
+  const safeServiceType = escapeHtml(details.serviceType);
+  const safeDate = escapeHtml(details.date);
+  const safeTime = escapeHtml(details.timeSlot);
+  const sessionText = getClientSessionLine(details);
+
+  return {
+    html: [
+      `<p>Hi ${safeClientName},</p>`,
+      `<p>${escapeHtml(intro)}</p>`,
+      `<p><strong>Service:</strong> ${safeServiceType}</p>`,
+      `<p><strong>Date:</strong> ${safeDate}</p>`,
+      `<p><strong>Time:</strong> ${safeTime}</p>`,
+      getClientSessionHtml(details),
+      '<p>You can review this appointment in your client dashboard.</p>',
+      '<p>Thank you,<br/>Aadhila M. Biswas</p>',
+    ].join(''),
+    text: [
+      `Hi ${details.clientName},`,
+      '',
+      intro,
+      '',
+      `Service: ${details.serviceType}`,
+      `Date: ${details.date}`,
+      `Time: ${details.timeSlot}`,
+      sessionText,
+      '',
+      'You can review this appointment in your client dashboard.',
+      '',
+      'Thank you,',
+      'Aadhila M. Biswas',
+    ].join('\n'),
+    subject: title,
+  };
+}
+
+function buildAdminEmail(title: string, action: string, details: AppointmentEmailDetails) {
+  const sessionLine = details.sessionMode === 'online'
+    ? `Online${details.onlineSession?.url ? ` - ${details.onlineSession.url}` : ' - link pending'}`
+    : 'In person';
+
+  return {
+    subject: title,
+    html: [
+      `<p><strong>${escapeHtml(action)}</strong></p>`,
+      `<p><strong>Client:</strong> ${escapeHtml(details.clientName)}</p>`,
+      `<p><strong>Email:</strong> ${escapeHtml(details.clientEmail || 'No email')}</p>`,
+      `<p><strong>Service:</strong> ${escapeHtml(details.serviceType)}</p>`,
+      `<p><strong>Date:</strong> ${escapeHtml(details.date)}</p>`,
+      `<p><strong>Time:</strong> ${escapeHtml(details.timeSlot)}</p>`,
+      `<p><strong>Session:</strong> ${escapeHtml(sessionLine)}</p>`,
+    ].join(''),
+    text: [
+      action,
+      '',
+      `Client: ${details.clientName}`,
+      `Email: ${details.clientEmail || 'No email'}`,
+      `Service: ${details.serviceType}`,
+      `Date: ${details.date}`,
+      `Time: ${details.timeSlot}`,
+      `Session: ${sessionLine}`,
+    ].join('\n'),
+  };
 }
 
 async function createAppointmentBooking(
@@ -209,6 +351,7 @@ async function createAppointmentBooking(
         transaction.set(appointmentRef, {
           clientId: payload.userId,
           clientName: payload.clientName,
+          clientEmail: payload.clientEmail,
           date: payload.date,
           timeSlot: payload.timeSlot,
           serviceType: payload.serviceType,
@@ -236,8 +379,14 @@ export async function bookConsultation(
   notes: string = '',
   sessionMode: BookingPayload['sessionMode'] = 'in_person'
 ): Promise<{ success: boolean; appointmentId: string; notificationState: BookingNotificationState }> {
-  const safeClientName = escapeHtml(clientName);
-  const safeServiceType = escapeHtml(serviceType);
+  const onlineSession = sessionMode === 'online'
+    ? {
+        provider: 'other' as const,
+        url: '',
+        visibleToClient: false,
+        notes: '',
+      }
+    : null;
   const result = await createAppointmentBooking({
     date,
     timeSlot,
@@ -247,37 +396,68 @@ export async function bookConsultation(
     serviceType,
     notes,
     sessionMode,
-    onlineSession: sessionMode === 'online'
-      ? {
-          provider: 'other',
-          url: '',
-          visibleToClient: false,
-          notes: '',
-        }
-      : null,
+    onlineSession,
   });
 
+  const appointmentDetails = {
+    clientName,
+    clientEmail,
+    date,
+    timeSlot,
+    serviceType,
+    sessionMode,
+    onlineSession,
+  };
+  const clientMail = buildClientEmail(
+    'Consultation Booked - Aadhila M. Biswas',
+    'Your consultation has been booked.',
+    appointmentDetails
+  );
   const notificationState = await queueBookingMail(
     clientEmail,
-    'Consultation Booked - Aadhila M. Biswas',
-    `<p>Hi ${safeClientName},</p><p>Your <strong>${safeServiceType}</strong> consultation is confirmed for <strong>${escapeHtml(date)}</strong> at <strong>${escapeHtml(timeSlot)}</strong>.</p><p>Thank you!</p>`,
-    `Hi ${clientName},\n\nYour ${serviceType} consultation is confirmed for ${date} at ${timeSlot}.\n\nThank you!`
+    clientMail.subject,
+    clientMail.html,
+    clientMail.text
   );
+  const adminMail = buildAdminEmail(
+    'New Consultation Booking - Aadhila M. Biswas',
+    'New booking received',
+    appointmentDetails
+  );
+  void queueAdminMail(adminMail.subject, adminMail.html, adminMail.text);
 
   return { ...result, notificationState };
 }
 
 export async function bookConsultationAsAdmin(payload: BookingPayload) {
-  const safeClientName = escapeHtml(payload.clientName);
-  const safeServiceType = escapeHtml(payload.serviceType);
   const result = await createAppointmentBooking(payload);
+  const appointmentDetails = {
+    clientName: payload.clientName,
+    clientEmail: payload.clientEmail,
+    date: payload.date,
+    timeSlot: payload.timeSlot,
+    serviceType: payload.serviceType,
+    sessionMode: payload.sessionMode,
+    onlineSession: payload.onlineSession,
+  };
+  const clientMail = buildClientEmail(
+    'Consultation Scheduled - Aadhila M. Biswas',
+    'Your consultation has been scheduled.',
+    appointmentDetails
+  );
 
   const notificationState = await queueBookingMail(
     payload.clientEmail,
-    'Consultation Scheduled - Aadhila M. Biswas',
-    `<p>Hi ${safeClientName},</p><p>Your <strong>${safeServiceType}</strong> consultation is confirmed for <strong>${escapeHtml(payload.date)}</strong> at <strong>${escapeHtml(payload.timeSlot)}</strong>.</p><p>Thank you!</p>`,
-    `Hi ${payload.clientName},\n\nYour ${payload.serviceType} consultation is confirmed for ${payload.date} at ${payload.timeSlot}.\n\nThank you!`
+    clientMail.subject,
+    clientMail.html,
+    clientMail.text
   );
+  const adminMail = buildAdminEmail(
+    'Admin Scheduled Consultation - Aadhila M. Biswas',
+    'Admin booking created',
+    appointmentDetails
+  );
+  void queueAdminMail(adminMail.subject, adminMail.html, adminMail.text);
 
   return { ...result, notificationState };
 }
@@ -294,11 +474,11 @@ async function rescheduleAppointmentInternal(
   serviceType: string,
   isAdmin: boolean
 ): Promise<{ success: boolean; notificationState: BookingNotificationState }> {
-  const safeClientName = escapeHtml(clientName);
-  const safeServiceType = escapeHtml(serviceType);
   const oldAvailabilityRef = doc(db, 'availability', oldDate);
   const newAvailabilityRef = doc(db, 'availability', newDate);
   const appointmentRef = doc(db, 'appointments', appointmentId);
+  let sessionMode: SessionMode | undefined;
+  let onlineSession: OnlineSessionPayload | null | undefined;
 
   try {
     await runBookingTransactionWithRecovery(() =>
@@ -310,6 +490,8 @@ async function rescheduleAppointmentInternal(
         }
 
         const appointment = appointmentDoc.data();
+        sessionMode = appointment.sessionMode || 'in_person';
+        onlineSession = appointment.onlineSession || null;
         if (!isAdmin && appointment.clientId !== actorId) {
           throw new Error('Unauthorized to reschedule this appointment.');
         }
@@ -359,12 +541,32 @@ async function rescheduleAppointmentInternal(
     throw normalizeBookingError(error);
   }
 
+  const appointmentDetails = {
+    clientName,
+    clientEmail,
+    date: newDate,
+    timeSlot: newTimeSlot,
+    serviceType,
+    sessionMode,
+    onlineSession,
+  };
+  const clientMail = buildClientEmail(
+    'Consultation Rescheduled - Aadhila M. Biswas',
+    'Your consultation has been rescheduled.',
+    appointmentDetails
+  );
   const notificationState = await queueBookingMail(
     clientEmail,
-    'Consultation Rescheduled - Aadhila M. Biswas',
-    `<p>Hi ${safeClientName},</p><p>Your <strong>${safeServiceType}</strong> consultation has been rescheduled to <strong>${escapeHtml(newDate)}</strong> at <strong>${escapeHtml(newTimeSlot)}</strong>.</p><p>Thank you!</p>`,
-    `Hi ${clientName},\n\nYour ${serviceType} consultation has been rescheduled to ${newDate} at ${newTimeSlot}.\n\nThank you!`
+    clientMail.subject,
+    clientMail.html,
+    clientMail.text
   );
+  const adminMail = buildAdminEmail(
+    'Consultation Rescheduled - Aadhila M. Biswas',
+    isAdmin ? 'Admin rescheduled consultation' : 'Client rescheduled consultation',
+    appointmentDetails
+  );
+  void queueAdminMail(adminMail.subject, adminMail.html, adminMail.text);
 
   return { success: true, notificationState };
 }
@@ -423,9 +625,12 @@ export async function updateAppointmentStatus(
   appointmentId: string,
   nextStatus: AppointmentStatus,
   actorId: string,
-  isAdmin: boolean = false
-): Promise<{ success: boolean }> {
+  isAdmin: boolean = false,
+  notificationOverride?: Partial<AppointmentEmailDetails>
+): Promise<{ success: boolean; notificationState?: BookingNotificationState }> {
   const appointmentRef = doc(db, 'appointments', appointmentId);
+  let statusChanged = false;
+  let notificationDetails: AppointmentEmailDetails | null = null;
 
   try {
     await runBookingTransactionWithRecovery(() =>
@@ -438,9 +643,14 @@ export async function updateAppointmentStatus(
 
         const appointment = appointmentDoc.data() as {
           clientId: string;
+          clientName?: string;
+          clientEmail?: string;
           date: string;
           timeSlot: string;
+          serviceType?: string;
           status: AppointmentStatus;
+          sessionMode?: SessionMode;
+          onlineSession?: OnlineSessionPayload | null;
         };
 
         if (!isAdmin && appointment.clientId !== actorId) {
@@ -469,10 +679,42 @@ export async function updateAppointmentStatus(
         }
 
         transaction.update(appointmentRef, { status: nextStatus });
+        statusChanged = true;
+        notificationDetails = {
+          clientName: notificationOverride?.clientName || appointment.clientName || 'Client',
+          clientEmail: notificationOverride?.clientEmail || appointment.clientEmail || '',
+          date: notificationOverride?.date || appointment.date,
+          timeSlot: notificationOverride?.timeSlot || appointment.timeSlot,
+          serviceType: notificationOverride?.serviceType || appointment.serviceType || 'Consultation',
+          sessionMode: notificationOverride?.sessionMode || appointment.sessionMode || 'in_person',
+          onlineSession: notificationOverride?.onlineSession || appointment.onlineSession || null,
+        };
       })
     );
   } catch (error) {
     throw normalizeBookingError(error);
+  }
+
+  if (statusChanged && nextStatus === 'cancelled' && notificationDetails) {
+    const clientMail = buildClientEmail(
+      'Consultation Cancelled - Aadhila M. Biswas',
+      'Your consultation has been cancelled.',
+      notificationDetails
+    );
+    const notificationState = await queueBookingMail(
+      notificationDetails.clientEmail || '',
+      clientMail.subject,
+      clientMail.html,
+      clientMail.text
+    );
+    const adminMail = buildAdminEmail(
+      'Consultation Cancelled - Aadhila M. Biswas',
+      isAdmin ? 'Admin cancelled consultation' : 'Client cancelled consultation',
+      notificationDetails
+    );
+    void queueAdminMail(adminMail.subject, adminMail.html, adminMail.text);
+
+    return { success: true, notificationState };
   }
 
   return { success: true };

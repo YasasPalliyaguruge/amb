@@ -16,6 +16,7 @@ describe('firestore rules hardening', () => {
   it('keeps appointment identity fields immutable for client updates', () => {
     expect(rules).toContain('function preservesAppointmentIdentity()');
     expect(rules).toContain('request.resource.data.clientId == resource.data.clientId');
+    expect(rules).toContain("request.resource.data.get('clientEmail', '') == resource.data.get('clientEmail', '')");
     expect(rules).toContain('request.resource.data.serviceType == resource.data.serviceType');
     expect(rules).toContain("request.resource.data.get('onlineSession', null) == resource.data.get('onlineSession', null)");
   });
