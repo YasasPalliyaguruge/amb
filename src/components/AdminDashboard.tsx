@@ -39,7 +39,7 @@ import {
   type MediaAssetRecord,
 } from '../services/mediaService';
 import { logAudit } from '../utils/auditLogger';
-import { parseStoredDate, toStoredDate } from '../utils/date';
+import { isTodayOrFutureStoredDate, parseStoredDate, toStoredDate } from '../utils/date';
 import { sanitizeSiteSettings, siteSettingsDocId } from '../siteSettings/siteSettings';
 import {
   adminTabs,
@@ -128,6 +128,21 @@ function isValidOnlineUrl(value: string) {
   }
 }
 
+function getOnlineSessionStatus(appointment: AppointmentRecord) {
+  if (appointment.sessionMode !== 'online') {
+    return '';
+  }
+
+  if (!appointment.onlineSession?.url) {
+    return 'Online link pending';
+  }
+
+  const provider = onlineProviderLabels[appointment.onlineSession.provider];
+  return appointment.onlineSession.visibleToClient
+    ? `${provider} link visible to client`
+    : `${provider} link hidden from client`;
+}
+
 export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabbarRef = useRef<HTMLDivElement | null>(null);
@@ -139,7 +154,7 @@ export default function AdminDashboard() {
   const [mediaAssets, setMediaAssets] = useState<MediaAssetRecord[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [settings, setSettings] = useState<PracticeSettings>({ daysOff: [0, 6], bufferTime: 15, defaultDuration: 45 });
-  const [filters, setFilters] = useState({ search: '', status: 'all', service: 'all', date: '' });
+  const [filters, setFilters] = useState({ search: '', status: 'all', service: 'all', date: '', timeRange: 'upcoming', sessionMode: 'all' });
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentRecord | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState(toStoredDate(new Date()));
   const [rescheduleTime, setRescheduleTime] = useState('');
@@ -265,7 +280,10 @@ export default function AdminDashboard() {
     .filter((entry) => {
       const linkedUser = userMap.get(entry.clientId);
       const haystack = `${entry.clientName} ${linkedUser?.email || ''}`.toLowerCase();
-      return (filters.status === 'all' || entry.status === filters.status) && (filters.service === 'all' || entry.serviceType === filters.service) && (!filters.date || entry.date === filters.date) && (!filters.search || haystack.includes(filters.search.toLowerCase()));
+      const isUpcoming = entry.status === 'scheduled' && isTodayOrFutureStoredDate(entry.date);
+      const isPast = entry.status !== 'scheduled' || !isTodayOrFutureStoredDate(entry.date);
+      const entrySessionMode = entry.sessionMode || 'in_person';
+      return (filters.timeRange === 'all' || (filters.timeRange === 'upcoming' && isUpcoming) || (filters.timeRange === 'past' && isPast)) && (filters.sessionMode === 'all' || entrySessionMode === filters.sessionMode) && (filters.status === 'all' || entry.status === filters.status) && (filters.service === 'all' || entry.serviceType === filters.service) && (!filters.date || entry.date === filters.date) && (!filters.search || haystack.includes(filters.search.toLowerCase()));
     })
     .sort(sortAppointmentsNewestFirst), [appointments, filters, userMap]);
   const selectedClient = clientUsers.find((entry) => entry.id === selectedClientId) || null;
@@ -715,10 +733,18 @@ export default function AdminDashboard() {
               <SectionHeader
                 eyebrow="Appointments"
                 title="Appointment management"
-                description="Client, date, service, and status filters."
+                description="Upcoming sessions, online requests, and booking records."
                 actions={<button type="button" onClick={() => openComposerForClient()} className="theme-button-primary whitespace-nowrap">Create booking</button>}
               />
               <div className="admin-filter-grid">
+                <label className="admin-field">
+                  <span className="admin-field__label">Appointment view</span>
+                  <select value={filters.timeRange} onChange={(event) => setFilters((current) => ({ ...current, timeRange: event.target.value }))} className="theme-select">
+                    <option value="upcoming">Upcoming</option>
+                    <option value="past">Past</option>
+                    <option value="all">All appointments</option>
+                  </select>
+                </label>
                 <label className="admin-field">
                   <span className="admin-field__label">Appointment search</span>
                   <input value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} placeholder="Client name or email" className="theme-input" />
@@ -734,6 +760,14 @@ export default function AdminDashboard() {
                 <label className="admin-field">
                   <span className="admin-field__label">Service type</span>
                   <select value={filters.service} onChange={(event) => setFilters((current) => ({ ...current, service: event.target.value }))} className="theme-select"><option value="all">All services</option>{serviceOptions.map((service) => <option key={service} value={service}>{service}</option>)}</select>
+                </label>
+                <label className="admin-field">
+                  <span className="admin-field__label">Session type</span>
+                  <select value={filters.sessionMode} onChange={(event) => setFilters((current) => ({ ...current, sessionMode: event.target.value }))} className="theme-select">
+                    <option value="all">All sessions</option>
+                    <option value="online">Online</option>
+                    <option value="in_person">In person</option>
+                  </select>
                 </label>
               </div>
             </section>
@@ -755,7 +789,7 @@ export default function AdminDashboard() {
                       <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">{format(parseStoredDate(appointment.date), 'MMMM d, yyyy')} - {formatSlot(appointment.timeSlot)} - {appointment.serviceType}</p>
                       {appointment.sessionMode === 'online' ? (
                         <p className="text-sm text-[rgb(var(--theme-muted-rgb))]">
-                          {appointment.onlineSession?.url ? `${onlineProviderLabels[appointment.onlineSession.provider]} link ${appointment.onlineSession.visibleToClient ? 'visible' : 'hidden'}` : 'Online link pending'}
+                          {getOnlineSessionStatus(appointment)}
                         </p>
                       ) : null}
                     </div>
@@ -770,7 +804,7 @@ export default function AdminDashboard() {
                 <EmptyState
                   title="No appointments match these filters"
                   description="No results for the selected filters."
-                  action={<button type="button" onClick={() => setFilters({ search: '', status: 'all', service: 'all', date: '' })} className="theme-button-secondary">Clear filters</button>}
+                  action={<button type="button" onClick={() => setFilters({ search: '', status: 'all', service: 'all', date: '', timeRange: 'upcoming', sessionMode: 'all' })} className="theme-button-secondary">Clear filters</button>}
                 />
               )}
             </div>

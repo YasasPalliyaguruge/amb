@@ -1848,7 +1848,7 @@
     }
 
     .admin-filter-grid {
-      grid-template-columns: minmax(16rem, 1fr) 11rem 11rem minmax(12rem, 0.7fr);
+      grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
     }
 
     .admin-media-upload-grid {
