@@ -13,7 +13,6 @@ import {
   isPublicExperiencePrepared,
   PUBLIC_LOADER_SCENE_EXIT_MS,
   PUBLIC_LOADER_SCENE_SAFETY_MS,
-  PUBLIC_MAIN_SCENE_SAFETY_MS,
   PUBLIC_MINIMUM_LOADER_MS,
   PUBLIC_COFFEE_LOADER_VISIBLE_MS,
   PUBLIC_SITE_HANDOFF_MS,
@@ -195,7 +194,6 @@ function MainPortfolio() {
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
   const [hasCoffeeLoaderVisibleTimeElapsed, setHasCoffeeLoaderVisibleTimeElapsed] = useState(false);
   const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
-  const [hasMainSplineSafetyElapsed, setHasMainSplineSafetyElapsed] = useState(false);
   const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
   const { siteSettings, loading: siteSettingsLoading } = useSiteSettings();
   const shouldUseSplinePreloader = !isMobileViewport;
@@ -203,8 +201,8 @@ function MainPortfolio() {
   const effectivePublicAssetsReady = isMobileViewport ? true : arePublicAssetsReady;
   const effectivePreloaderReady = shouldUseSplinePreloader ? isPreloaderSplineReady : true;
   const effectiveLoaderSafetyElapsed = shouldUseSplinePreloader ? hasLoaderSafetyElapsed : true;
-  const effectiveSplineBackgroundReady = isMobileViewport ? true : isSplineBackgroundReady;
-  const effectiveMainSplineSafetyElapsed = isMobileViewport ? true : hasMainSplineSafetyElapsed;
+  const effectiveSplineBackgroundReady = true;
+  const effectiveMainSplineSafetyElapsed = true;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -284,17 +282,13 @@ function MainPortfolio() {
 
   useEffect(() => {
     const minimumLoaderDelay = isMobileViewport ? 720 : PUBLIC_MINIMUM_LOADER_MS;
-    const mainSplineSafetyDelay = isMobileViewport ? 12000 : PUBLIC_MAIN_SCENE_SAFETY_MS;
     const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), minimumLoaderDelay);
     // Avoid blocking on the decorative loader scene if its external request stalls.
     const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), PUBLIC_LOADER_SCENE_SAFETY_MS);
-    // Keep the site recoverable if the external background scene is delayed by the network.
-    const mainSplineSafetyTimer = window.setTimeout(() => setHasMainSplineSafetyElapsed(true), mainSplineSafetyDelay);
 
     return () => {
       window.clearTimeout(minimumTimer);
       window.clearTimeout(safetyTimer);
-      window.clearTimeout(mainSplineSafetyTimer);
     };
   }, [isMobileViewport]);
 
