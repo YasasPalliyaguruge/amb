@@ -66,6 +66,19 @@ function canJoinOnlineSession(appointment: Appointment) {
   );
 }
 
+function compareAppointmentsOldestFirst(left: Appointment, right: Appointment) {
+  const dateComparison = left.date.localeCompare(right.date);
+  if (dateComparison !== 0) {
+    return dateComparison;
+  }
+
+  return left.timeSlot.localeCompare(right.timeSlot);
+}
+
+function compareAppointmentsNewestFirst(left: Appointment, right: Appointment) {
+  return compareAppointmentsOldestFirst(right, left);
+}
+
 function getStatusStyles(status: string) {
   switch (status) {
     case 'scheduled':
@@ -92,7 +105,10 @@ export default function PatientDashboard() {
   const navigate = useNavigate();
 
   const upcomingAppointments = useMemo(
-    () => appointments.filter((appointment) => appointment.status === 'scheduled' && isTodayOrFutureStoredDate(appointment.date)),
+    () =>
+      appointments
+        .filter((appointment) => appointment.status === 'scheduled' && isTodayOrFutureStoredDate(appointment.date))
+        .sort(compareAppointmentsOldestFirst),
     [appointments]
   );
   const pastAppointments = useMemo(
@@ -122,13 +138,7 @@ export default function PatientDashboard() {
         snapshot.forEach((appointmentDoc) => {
           nextAppointments.push({ id: appointmentDoc.id, ...appointmentDoc.data() } as Appointment);
         });
-        nextAppointments.sort((left, right) => {
-          const dateComparison = left.date.localeCompare(right.date);
-          if (dateComparison !== 0) {
-            return dateComparison;
-          }
-          return left.timeSlot.localeCompare(right.timeSlot);
-        });
+        nextAppointments.sort(compareAppointmentsNewestFirst);
         setAppointments(nextAppointments);
         setAppointmentsNotice('');
       },

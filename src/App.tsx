@@ -56,6 +56,33 @@ function preloadPublicExperience() {
   return publicExperienceModulesPromise;
 }
 
+function schedulePublicExperienceWarmup() {
+  let idleCallbackId: number | undefined;
+  const idleWindow = window as Window & {
+    requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
+
+  const warmPublicExperience = () => {
+    void preloadPublicExperience();
+  };
+
+  if (idleWindow.requestIdleCallback) {
+    idleCallbackId = idleWindow.requestIdleCallback(warmPublicExperience, { timeout: 5000 });
+  } else {
+    idleCallbackId = window.setTimeout(warmPublicExperience, 2200);
+  }
+
+  return () => {
+    if (idleCallbackId === undefined) {
+      return;
+    }
+
+    idleWindow.cancelIdleCallback?.(idleCallbackId);
+    window.clearTimeout(idleCallbackId);
+  };
+}
+
 const publicAssetsReadyPromise = (() => {
   const waitForDocumentReady = new Promise<void>((resolve) => {
     if (document.readyState !== 'loading') {
@@ -189,7 +216,6 @@ function MainPortfolio() {
   const [isMobileViewport, setIsMobileViewport] = useState(() => isMobileSplineViewport());
   const [isSplineBackgroundReady, setIsSplineBackgroundReady] = useState(false);
   const [isPreloaderSplineReady, setIsPreloaderSplineReady] = useState(false);
-  const [arePublicSectionsReady, setArePublicSectionsReady] = useState(false);
   const [arePublicAssetsReady, setArePublicAssetsReady] = useState(false);
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
   const [hasCoffeeLoaderVisibleTimeElapsed, setHasCoffeeLoaderVisibleTimeElapsed] = useState(false);
@@ -197,7 +223,7 @@ function MainPortfolio() {
   const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
   const { siteSettings, loading: siteSettingsLoading } = useSiteSettings();
   const shouldUseSplinePreloader = !isMobileViewport;
-  const effectivePublicSectionsReady = isMobileViewport ? true : arePublicSectionsReady;
+  const effectivePublicSectionsReady = true;
   const effectivePublicAssetsReady = isMobileViewport ? true : arePublicAssetsReady;
   const effectivePreloaderReady = shouldUseSplinePreloader ? isPreloaderSplineReady : true;
   const effectiveLoaderSafetyElapsed = shouldUseSplinePreloader ? hasLoaderSafetyElapsed : true;
@@ -255,20 +281,6 @@ function MainPortfolio() {
   useEffect(() => {
     let isMounted = true;
 
-    preloadPublicExperience().finally(() => {
-      if (isMounted) {
-        setArePublicSectionsReady(true);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
     publicAssetsReadyPromise.finally(() => {
       if (isMounted) {
         setArePublicAssetsReady(true);
@@ -279,6 +291,14 @@ function MainPortfolio() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (startupPhase !== 'ready') {
+      return;
+    }
+
+    return schedulePublicExperienceWarmup();
+  }, [startupPhase]);
 
   useEffect(() => {
     const minimumLoaderDelay = isMobileViewport ? 720 : PUBLIC_MINIMUM_LOADER_MS;
@@ -432,12 +452,14 @@ function MainPortfolio() {
         <Suspense fallback={null}>
           <Footer />
         </Suspense>
-        <Suspense fallback={null}>
-          <LoginModal
-            isOpen={isLoginModalOpen}
-            onClose={closeLoginModal}
-          />
-        </Suspense>
+        {isLoginModalOpen && (
+          <Suspense fallback={null}>
+            <LoginModal
+              isOpen={isLoginModalOpen}
+              onClose={closeLoginModal}
+            />
+          </Suspense>
+        )}
       </div>
     </div>
   );
