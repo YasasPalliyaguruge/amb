@@ -20,6 +20,20 @@ interface LoginModalProps {
 
 type AuthMethod = 'select' | 'phone_start' | 'phone_verify';
 
+function formatPhoneForFirebase(phoneNumber: string) {
+  const compactPhone = phoneNumber.trim().replace(/[\s().-]/g, '');
+
+  if (compactPhone.startsWith('0')) {
+    return `+94${compactPhone.substring(1)}`;
+  }
+
+  if (!compactPhone.startsWith('+')) {
+    return `+${compactPhone}`;
+  }
+
+  return compactPhone;
+}
+
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { signInWithGoogle } = useAuth();
   const { siteSettings } = useSiteSettings();
@@ -75,7 +89,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
     return () => {
       isMounted = false;
-      if (!isOpen && window.recaptchaVerifier) {
+      if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear();
         window.recaptchaVerifier = undefined;
       }
@@ -101,14 +115,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     event.preventDefault();
     if (!phoneNumber) return toast.error(copy.phoneRequiredError);
 
-    let formattedPhone = phoneNumber.trim();
-    if (formattedPhone.startsWith('0')) {
-      formattedPhone = `+94${formattedPhone.substring(1)}`;
-    } else if (!formattedPhone.startsWith('+')) {
-      formattedPhone = `+${formattedPhone}`;
-    }
+    const formattedPhone = formatPhoneForFirebase(phoneNumber);
 
-      setLoading(true);
+    setLoading(true);
     try {
       const appVerifier = window.recaptchaVerifier;
       if (!appVerifier) throw new Error(copy.recaptchaError);
