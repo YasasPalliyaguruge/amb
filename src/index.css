@@ -1667,6 +1667,10 @@
     outline: none;
   }
 
+  .patient-input-with-icon {
+    padding-left: 2.75rem;
+  }
+
   .patient-section-heading {
     display: flex;
     flex-direction: column;

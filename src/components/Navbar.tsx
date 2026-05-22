@@ -14,7 +14,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, role, logout } = useAuth();
+  const { user, role, profile, logout } = useAuth();
   const { siteSettings } = useSiteSettings();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navLinks = siteSettings.homepage.sectionOrder
@@ -23,6 +23,9 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
       name: siteSettings.homepage.labels[sectionId] || homepageSectionMeta[sectionId].label,
       href: homepageSectionMeta[sectionId].href,
     }));
+  const displayName = profile?.name || user?.displayName || siteSettings.branding.userFallbackLabel;
+  const displayContact = profile?.email || user?.email || profile?.phone || user?.phoneNumber || '';
+  const displayFirstName = displayName.split(' ')[0] || siteSettings.branding.userFallbackLabel;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 24);
@@ -167,7 +170,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
-                      alt={user.displayName || siteSettings.branding.userFallbackLabel}
+                      alt={displayName}
                       className="h-8 w-8 rounded-full object-cover"
                       referrerPolicy="no-referrer"
                     />
@@ -177,7 +180,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                     </div>
                   )}
                   <span className="hidden text-sm font-semibold text-[rgb(var(--theme-text-rgb))] md:block">
-                    {user.displayName?.split(' ')[0] || siteSettings.branding.userFallbackLabel}
+                    {displayFirstName}
                   </span>
                 </button>
 
@@ -191,8 +194,8 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                       className="theme-panel absolute right-0 mt-3 w-60 overflow-hidden"
                     >
                       <div className="border-b border-[rgb(var(--theme-line-rgb)/0.2)] px-5 py-4">
-                        <p className="truncate text-sm font-semibold text-[rgb(var(--theme-text-rgb))]">{user.displayName}</p>
-                        <p className="truncate text-xs text-[rgb(var(--theme-muted-rgb))]">{user.email}</p>
+                        <p className="truncate text-sm font-semibold text-[rgb(var(--theme-text-rgb))]">{displayName}</p>
+                        {displayContact && <p className="truncate text-xs text-[rgb(var(--theme-muted-rgb))]">{displayContact}</p>}
                       </div>
                       <Link
                         to="/client-dashboard"
@@ -304,8 +307,8 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                 {user ? (
                   <>
                     <div className="rounded-[calc(var(--theme-radius-md)+0.08rem)] bg-[rgb(var(--theme-surface-rgb)/0.68)] px-4 py-4">
-                      <p className="truncate text-sm font-semibold text-[rgb(var(--theme-text-rgb))]">{user.displayName}</p>
-                      <p className="truncate text-xs text-[rgb(var(--theme-muted-rgb))]">{user.email}</p>
+                      <p className="truncate text-sm font-semibold text-[rgb(var(--theme-text-rgb))]">{displayName}</p>
+                      {displayContact && <p className="truncate text-xs text-[rgb(var(--theme-muted-rgb))]">{displayContact}</p>}
                     </div>
                     <Link
                       to="/client-dashboard"

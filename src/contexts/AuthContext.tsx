@@ -7,9 +7,17 @@ import { isBootstrapAdminEmail } from '../config/admin';
 interface AuthContextType {
   user: User | null;
   role: string | null;
+  profile: AuthProfile | null;
   loading: boolean;
   signInWithGoogle: (feedback: AuthFeedbackCopy) => Promise<void>;
   logout: (feedback: AuthFeedbackCopy) => Promise<void>;
+}
+
+interface AuthProfile {
+  name: string;
+  email: string;
+  phone: string;
+  timezone: string;
 }
 
 interface AuthFeedbackCopy {
@@ -54,6 +62,7 @@ function getAuthErrorMessage(error: unknown, fallbackMessage: string) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [profile, setProfile] = useState<AuthProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const authEventVersionRef = useRef(0);
 
@@ -105,6 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentUser);
 
           if (currentUser) {
+            setProfile({
+              name: currentUser.displayName || defaultSiteSettings.branding.userFallbackLabel,
+              email: currentUser.email || '',
+              phone: currentUser.phoneNumber || '',
+              timezone: '',
+            });
             setRole(isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified) ? 'admin' : null);
             const userRef = firestore.doc(db, 'users', currentUser.uid);
             try {
@@ -116,19 +131,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                   if (!roleSnap.exists()) {
                     const nextRole = isDefaultAdmin ? 'admin' : 'client';
+                    const fallbackProfile = {
+                      name: currentUser.displayName || defaultSiteSettings.branding.userFallbackLabel,
+                      email: currentUser.email || '',
+                      phone: currentUser.phoneNumber || '',
+                      timezone: '',
+                    };
 
                     if (isCurrentAuthEvent()) {
                       setRole(nextRole);
+                      setProfile(fallbackProfile);
                       setLoading(false);
                     }
 
                     try {
-                      await firestore.setDoc(userRef, {
-                        name: currentUser.displayName || 'Client',
-                        email: currentUser.email || '',
-                        ...(currentUser.phoneNumber ? { phone: currentUser.phoneNumber } : {}),
-                        role: nextRole,
-                        createdAt: firestore.serverTimestamp()
+                      await firestore.runTransaction(db, async (transaction) => {
+                        const latestUserSnap = await transaction.get(userRef);
+
+                        if (latestUserSnap.exists()) {
+                          return;
+                        }
+
+                        transaction.set(userRef, {
+                          name: currentUser.displayName || 'Client',
+                          email: currentUser.email || '',
+                          ...(currentUser.phoneNumber ? { phone: currentUser.phoneNumber } : {}),
+                          role: nextRole,
+                          createdAt: firestore.serverTimestamp()
+                        });
                       });
                     } catch (createError) {
                       console.error('Error creating user document:', createError);
@@ -137,10 +167,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return;
                   }
 
-                  const nextRole = isDefaultAdmin ? 'admin' : (roleSnap.data().role || 'client');
+                  const userData = roleSnap.data();
+                  const nextRole = isDefaultAdmin ? 'admin' : (userData.role || 'client');
+                  const nextProfile = {
+                    name: userData.name || currentUser.displayName || defaultSiteSettings.branding.userFallbackLabel,
+                    email: userData.email || currentUser.email || '',
+                    phone: userData.phone || currentUser.phoneNumber || '',
+                    timezone: userData.timezone || '',
+                  };
 
                   if (isCurrentAuthEvent()) {
                     setRole(nextRole);
+                    setProfile(nextProfile);
                     setLoading(false);
                   }
                 },
@@ -148,6 +186,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   console.error('Error subscribing to user role:', roleError);
                   if (isCurrentAuthEvent()) {
                     setRole(isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified) ? 'admin' : 'client');
+                    setProfile({
+                      name: currentUser.displayName || defaultSiteSettings.branding.userFallbackLabel,
+                      email: currentUser.email || '',
+                      phone: currentUser.phoneNumber || '',
+                      timezone: '',
+                    });
                     setLoading(false);
                   }
                 }
@@ -162,6 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             unsubscribeRole?.();
             unsubscribeRole = null;
             setRole(null);
+            setProfile(null);
           }
 
           if (!currentUser && isCurrentAuthEvent()) {
@@ -175,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           setLoading(false);
           setRole(null);
+          setProfile(null);
         }
       }
     })();
@@ -233,7 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, role, profile, loading, signInWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

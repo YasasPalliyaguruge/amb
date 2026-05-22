@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Smartphone, ArrowRight, ShieldCheck } from 'lucide-react';
-import type { ConfirmationResult, RecaptchaVerifier } from 'firebase/auth';
+import type { ConfirmationResult, RecaptchaVerifier, User } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { useModalFocusTrap } from '../hooks/useModalFocusTrap';
@@ -18,7 +18,7 @@ interface LoginModalProps {
   onClose: () => void;
 }
 
-type AuthMethod = 'select' | 'phone_start' | 'phone_verify';
+type AuthMethod = 'select' | 'phone_start' | 'phone_verify' | 'profile_complete';
 
 function formatPhoneForFirebase(phoneNumber: string) {
   const compactPhone = phoneNumber.trim().replace(/[\s().-]/g, '');
@@ -52,6 +52,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [verifiedPhoneUser, setVerifiedPhoneUser] = useState<User | null>(null);
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -68,6 +72,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setPhoneNumber('');
       setOtp('');
       setConfirmationResult(null);
+      setVerifiedPhoneUser(null);
+      setProfileName('');
+      setProfileEmail('');
+      setProfilePhone('');
     }
   }, [isOpen]);
 
@@ -76,8 +84,70 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setMethod('select');
       setOtp('');
       setConfirmationResult(null);
+      setVerifiedPhoneUser(null);
     }
   }, [isPhoneLoginEnabled, method]);
+
+  const loadPhoneProfileDraft = async (phoneUser: User) => {
+    const [{ doc, getDoc }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('../firebase-db'),
+    ]);
+
+    const profileSnap = await getDoc(doc(db, 'users', phoneUser.uid));
+    const profileData = profileSnap.exists() ? profileSnap.data() : {};
+    const savedName = typeof profileData.name === 'string' ? profileData.name.trim() : '';
+    const savedEmail = typeof profileData.email === 'string' ? profileData.email.trim() : '';
+    const savedPhone = typeof profileData.phone === 'string' ? profileData.phone.trim() : '';
+    const displayName = phoneUser.displayName?.trim() || '';
+    const email = savedEmail || phoneUser.email || '';
+    const phone = savedPhone || phoneUser.phoneNumber || formatPhoneForFirebase(phoneNumber);
+    const meaningfulName = savedName && savedName !== 'Client' ? savedName : displayName;
+
+    return {
+      name: meaningfulName,
+      email,
+      phone,
+      needsCompletion: !meaningfulName,
+    };
+  };
+
+  const savePhoneProfile = async (phoneUser: User, name: string, email: string, phone: string) => {
+    const [
+      { updateProfile },
+      { doc, getDoc, serverTimestamp, setDoc, updateDoc },
+      { db },
+    ] = await Promise.all([
+      import('firebase/auth'),
+      import('firebase/firestore'),
+      import('../firebase-db'),
+    ]);
+
+    const userRef = doc(db, 'users', phoneUser.uid);
+    const profileSnap = await getDoc(userRef);
+    const profilePayload = {
+      name,
+      email,
+      phone,
+    };
+
+    if (profileSnap.exists()) {
+      await updateDoc(userRef, profilePayload);
+    } else {
+      await setDoc(userRef, {
+        ...profilePayload,
+        timezone: '',
+        role: 'client',
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    try {
+      await updateProfile(phoneUser, { displayName: name });
+    } catch (profileError) {
+      console.warn('Firebase display name update skipped:', profileError);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -166,12 +236,54 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
     setLoading(true);
     try {
-      await confirmationResult.confirm(otp);
+      const credential = await confirmationResult.confirm(otp);
+      const draft = await loadPhoneProfileDraft(credential.user);
+
+      if (draft.needsCompletion) {
+        setVerifiedPhoneUser(credential.user);
+        setProfileName(draft.name);
+        setProfileEmail(draft.email);
+        setProfilePhone(draft.phone);
+        setMethod('profile_complete');
+        return;
+      }
+
       toast.success(copy.otpSuccessToast);
       onClose();
     } catch (err: any) {
       console.error('OTP Verify Error:', err);
       toast.error(copy.invalidOtpError);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompletePhoneProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!verifiedPhoneUser) {
+      toast.error('Please verify your phone number again.');
+      setMethod('phone_start');
+      return;
+    }
+
+    const name = profileName.trim();
+    const email = profileEmail.trim();
+    const phone = profilePhone.trim() || verifiedPhoneUser.phoneNumber || formatPhoneForFirebase(phoneNumber);
+
+    if (!name) {
+      toast.error('Please enter your name.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await savePhoneProfile(verifiedPhoneUser, name, email, phone);
+      toast.success(copy.otpSuccessToast);
+      onClose();
+    } catch (profileError: any) {
+      console.error('Phone profile save failed:', profileError);
+      toast.error(profileError.message || 'Failed to save profile details.');
     } finally {
       setLoading(false);
     }
@@ -227,6 +339,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   {method === 'select' && copy.selectDescription}
                   {method === 'phone_start' && copy.phoneStartDescription}
                   {method === 'phone_verify' && copy.phoneVerifyDescription}
+                  {method === 'profile_complete' && 'Add your profile details for the client dashboard.'}
                 </p>
               </div>
 
@@ -350,6 +463,67 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     className="theme-button-ghost mx-auto"
                   >
                     {copy.wrongNumberLabel}
+                  </button>
+                </motion.form>
+              )}
+
+              {method === 'profile_complete' && (
+                <motion.form
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  onSubmit={handleCompletePhoneProfile}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <label htmlFor="login-profile-name" className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgb(var(--theme-muted-rgb))]">Full Name</label>
+                    <input
+                      id="login-profile-name"
+                      name="name"
+                      type="text"
+                      value={profileName}
+                      onChange={(event) => setProfileName(event.target.value)}
+                      placeholder="Your name"
+                      autoComplete="name"
+                      autoFocus
+                      className="theme-input"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="login-profile-email" className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgb(var(--theme-muted-rgb))]">Email</label>
+                    <input
+                      id="login-profile-email"
+                      name="email"
+                      type="email"
+                      value={profileEmail}
+                      onChange={(event) => setProfileEmail(event.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      className="theme-input"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="login-profile-phone" className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgb(var(--theme-muted-rgb))]">{copy.phoneNumberLabel}</label>
+                    <input
+                      id="login-profile-phone"
+                      name="phone"
+                      type="tel"
+                      value={profilePhone}
+                      onChange={(event) => setProfilePhone(event.target.value)}
+                      placeholder={copy.phonePlaceholder}
+                      autoComplete="tel"
+                      className="theme-input"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !profileName.trim()}
+                    className="theme-button-primary w-full rounded-[calc(var(--theme-radius-md)+0.1rem)] py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loading ? 'Saving...' : 'Save and Continue'}
+                    {!loading && <ArrowRight className="h-4 w-4" />}
                   </button>
                 </motion.form>
               )}

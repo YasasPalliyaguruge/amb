@@ -95,13 +95,15 @@ function getStatusStyles(status: string) {
 export default function PatientDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [appointmentsNotice, setAppointmentsNotice] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [timezone, setTimezone] = useState('');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [reschedulingAppt, setReschedulingAppt] = useState<Appointment | null>(null);
 
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
   const upcomingAppointments = useMemo(
@@ -158,9 +160,11 @@ export default function PatientDashboard() {
       (profileDoc) => {
         if (!profileDoc.exists()) return;
 
-        const profile = profileDoc.data();
-        setPhone(profile.phone || '');
-        setTimezone(profile.timezone || '');
+        const profileData = profileDoc.data();
+        setName(profileData.name || user.displayName || '');
+        setEmail(profileData.email || user.email || '');
+        setPhone(profileData.phone || user.phoneNumber || '');
+        setTimezone(profileData.timezone || '');
       },
       (profileError) => {
         console.error('Error fetching profile:', profileError);
@@ -173,20 +177,30 @@ export default function PatientDashboard() {
     };
   }, [user, loading, navigate]);
 
+  useEffect(() => {
+    if (!user || !profile) return;
+
+    setName(profile.name || user.displayName || '');
+    setEmail(profile.email || user.email || '');
+    setPhone(profile.phone || user.phoneNumber || '');
+    setTimezone(profile.timezone || '');
+  }, [profile, user]);
+
   const handleCancelAppointment = async (appointmentId: string) => {
     if (!user) return;
     const appointment = appointments.find((entry) => entry.id === appointmentId);
+    const profileEmail = email.trim() || profile?.email || user.email || '';
 
     try {
       await updateAppointmentStatus(appointmentId, 'cancelled', user.uid, false, appointment ? {
         clientName: appointment.clientName,
-        clientEmail: user.email || '',
+        clientEmail: profileEmail,
         date: appointment.date,
         timeSlot: appointment.timeSlot,
         serviceType: appointment.serviceType,
         sessionMode: appointment.sessionMode,
         onlineSession: appointment.onlineSession,
-      } : { clientEmail: user.email || '' });
+      } : { clientEmail: profileEmail });
       toast.success('Appointment cancelled successfully');
       setCancellingId(null);
     } catch (cancelError: any) {
@@ -198,12 +212,30 @@ export default function PatientDashboard() {
     event.preventDefault();
     if (!user) return;
 
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      toast.error('Please enter your name.');
+      return;
+    }
+
     setIsUpdatingProfile(true);
     try {
       await updateDoc(doc(db, 'users', user.uid), {
+        name: trimmedName,
+        email: trimmedEmail,
         phone: phone.trim(),
         timezone: timezone.trim(),
       });
+
+      try {
+        const { updateProfile } = await import('firebase/auth');
+        await updateProfile(user, { displayName: trimmedName });
+      } catch (displayNameError) {
+        console.warn('Firebase display name update skipped:', displayNameError);
+      }
+
       toast.success('Profile updated successfully');
     } catch (updateError: any) {
       toast.error(updateError.message || 'Failed to update profile');
@@ -348,8 +380,9 @@ export default function PatientDashboard() {
                   <input
                     id="client-name"
                     type="text"
-                    value={user?.displayName || ''}
-                    disabled
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    autoComplete="name"
                     className="patient-plain-input"
                   />
                 </div>
@@ -362,8 +395,9 @@ export default function PatientDashboard() {
                   <input
                     id="client-email"
                     type="email"
-                    value={user?.email || ''}
-                    disabled
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
                     className="patient-plain-input"
                   />
                 </div>
@@ -382,7 +416,7 @@ export default function PatientDashboard() {
                       onChange={(event) => setPhone(event.target.value)}
                       placeholder="+94 77 000 0000"
                       autoComplete="tel"
-                      className="theme-input pl-10"
+                      className="theme-input patient-input-with-icon"
                     />
                   </div>
                 </div>
@@ -543,7 +577,7 @@ export default function PatientDashboard() {
           isOpen={!!reschedulingAppt}
           onClose={() => setReschedulingAppt(null)}
           appointment={reschedulingAppt}
-          userEmail={user.email || ''}
+          userEmail={email.trim() || profile?.email || user.email || ''}
         />
       )}
     </div>

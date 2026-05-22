@@ -49,9 +49,11 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
   const modalRef = useRef<HTMLDivElement>(null);
   const modalCloseButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { siteSettings } = useSiteSettings();
   const serviceTypes = siteSettings.consultationDesk.serviceTypes;
+  const clientDisplayName = profile?.name || user?.displayName || siteSettings.branding.userFallbackLabel;
+  const clientEmail = profile?.email || user?.email || '';
 
   useEffect(() => {
     if (!serviceType && serviceTypes[0]) {
@@ -144,8 +146,8 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
         selectedDateKey,
         selectedSlot,
         user.uid,
-        user.displayName || siteSettings.branding.userFallbackLabel,
-        user.email || '',
+        clientDisplayName,
+        clientEmail,
         serviceType || serviceTypes[0]?.value || 'Consultation',
         notes,
         sessionMode
@@ -543,7 +545,7 @@ export default function ConsultationDesk({ onLoginClick }: ConsultationDeskProps
                       <div className="flex items-center justify-between gap-4">
                         <span className="text-sm text-brand-text/58">{siteSettings.consultationDesk.modalPatientLabel}</span>
                         <span className="truncate text-right font-semibold text-brand-text">
-                          {user?.displayName || siteSettings.branding.userFallbackLabel}
+                          {clientDisplayName}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
