@@ -40,6 +40,12 @@ type StringFieldConfig<S extends ObjectSectionKey> = {
   rows?: number;
   aliases?: string[];
 };
+type BooleanFieldConfig<S extends ObjectSectionKey> = {
+  key: keyof SiteSettings[S];
+  label: string;
+  description: string;
+  aliases?: string[];
+};
 type StructuredFieldConfig<T> = {
   key: keyof T;
   label: string;
@@ -138,6 +144,14 @@ const loginModalFields: StringFieldConfig<'loginModal'>[] = [
   { key: 'otpRequiredError', label: 'OTP required error' },
   { key: 'otpSuccessToast', label: 'OTP success toast' },
   { key: 'invalidOtpError', label: 'Invalid OTP error' },
+];
+const loginModalControls: BooleanFieldConfig<'loginModal'>[] = [
+  {
+    key: 'phoneLoginEnabled',
+    label: 'Mobile number login',
+    description: 'Show phone OTP sign-in as an option in the public login modal.',
+    aliases: ['phone login', 'sms login', 'otp login', 'mobile login', 'disable sms'],
+  },
 ];
 const contactFields: StringFieldConfig<'branding'>[] = [
   { key: 'contactEmail', label: 'Contact email', aliases: ['email'] },
@@ -865,6 +879,36 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
       </div>
     ));
 
+  const renderBooleanFields = <S extends ObjectSectionKey>(
+    section: S,
+    fields: BooleanFieldConfig<S>[],
+    sectionId: string,
+    groupId: string
+  ) =>
+    fields.map((field) => {
+      const anchorId = getFieldAnchorId(sectionId, groupId, String(field.key));
+      const isChecked = Boolean(draft[section][field.key]);
+
+      return (
+        <label
+          key={String(field.key)}
+          className={`website-search-anchor flex items-start gap-3 rounded-[calc(var(--theme-radius-md)+0.08rem)] border border-[rgb(var(--theme-line-rgb)/0.25)] bg-[rgb(var(--theme-surface-rgb)/0.56)] px-4 py-3${highlightedAnchorId === anchorId ? ' website-search-anchor--active' : ''}`}
+          data-search-anchor={anchorId}
+        >
+          <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={(event) => updateSectionField(section, field.key, event.target.checked as SiteSettings[S][typeof field.key])}
+            className="mt-1 h-4 w-4 accent-[rgb(var(--theme-primary-rgb))]"
+          />
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-[rgb(var(--theme-text-rgb))]">{field.label}</span>
+            <span className="mt-1 block text-xs leading-5 text-[rgb(var(--theme-muted-rgb))]">{field.description}</span>
+          </span>
+        </label>
+      );
+    });
+
   const updateHomepageLabel = (sectionId: HomepageSectionId, value: string) => {
     setDraft((current) => ({
       ...current,
@@ -943,6 +987,30 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
         label: field.label,
         description: groupMeta.description,
         valueText: String(draft[sectionKey][field.key] ?? ''),
+        aliases: field.aliases,
+        breadcrumbs: [sectionMeta.label, groupMeta.title, field.label],
+        anchorId: getFieldAnchorId(sectionMeta.id, groupMeta.id, String(field.key)),
+        kind: 'field',
+      })),
+    [draft]
+  );
+
+  const buildBooleanFieldSearchItems = useCallback(
+    <S extends ObjectSectionKey>(
+      sectionKey: S,
+      sectionMeta: SearchableSection,
+      groupMeta: SearchableFieldGroup,
+      fields: BooleanFieldConfig<S>[]
+    ): WebsiteSearchItem[] =>
+      fields.map((field) => ({
+        id: `${sectionMeta.id}-${groupMeta.id}-${String(field.key)}`,
+        sectionId: sectionMeta.id,
+        sectionTitle: sectionMeta.label,
+        groupId: groupMeta.id,
+        groupTitle: groupMeta.title,
+        label: field.label,
+        description: field.description,
+        valueText: draft[sectionKey][field.key] ? 'enabled visible on' : 'disabled hidden off',
         aliases: field.aliases,
         breadcrumbs: [sectionMeta.label, groupMeta.title, field.label],
         anchorId: getFieldAnchorId(sectionMeta.id, groupMeta.id, String(field.key)),
@@ -1081,6 +1149,7 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
       pushGroupItem(sectionMeta as SearchableSection, groupMeta as SearchableFieldGroup);
       items.push(...buildFieldSearchItems(sectionKey as ObjectSectionKey, sectionMeta as SearchableSection, groupMeta as SearchableFieldGroup, fields as StringFieldConfig<ObjectSectionKey>[]));
     });
+    items.push(...buildBooleanFieldSearchItems('loginModal', brandingSection, signInModalGroup, loginModalControls));
 
     items.push(buildListSearchItem(heroProfileSection, heroGroup, 'Hero badges', draft.hero.badges, ['badges', 'hero tags']));
     items.push(...buildStructuredListItems(heroProfileSection, heroGroup, 'Hero trust cards', draft.hero.trustCards, textCardFields, ['trust cards']));
@@ -1184,7 +1253,7 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
     items.push(buildListSearchItem(themeSection, advancedThemeGroup, 'Theme controls', [String(draft.theme.controls.radiusScale), String(draft.theme.controls.shadowDepth), String(draft.theme.controls.grainIntensity), String(draft.theme.controls.motionDensity), String(draft.motion.pointerStrength)], ['radius', 'shadow', 'motion density', 'pointer strength']));
 
     return items;
-  }, [buildFieldSearchItems, buildListSearchItem, buildStructuredListItems, currentPreset.label, draft, settingsNavItems]);
+  }, [buildBooleanFieldSearchItems, buildFieldSearchItems, buildListSearchItem, buildStructuredListItems, currentPreset.label, draft, settingsNavItems]);
 
   const searchResults = useMemo(() => searchWebsiteSettings(searchItems, searchQuery, 14), [searchItems, searchQuery]);
   const matchedSectionIds = useMemo(() => new Set(searchResults.map((item) => item.sectionId)), [searchResults]);
@@ -1512,6 +1581,9 @@ export default function WebsiteSettingsPanel({ adminId, adminEmail }: WebsiteSet
             anchorId={getGroupAnchorId(brandingSection.id, signInModalGroup.id)}
             isHighlighted={highlightedAnchorId === getGroupAnchorId(brandingSection.id, signInModalGroup.id)}
           >
+            <div className="mb-4 grid gap-3">
+              {renderBooleanFields('loginModal', loginModalControls, brandingSection.id, signInModalGroup.id)}
+            </div>
             <div className="website-fields-grid">
               {renderFields('loginModal', loginModalFields, brandingSection.id, signInModalGroup.id)}
             </div>

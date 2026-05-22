@@ -108,6 +108,7 @@ export interface SiteAppCopySettings {
 }
 
 export interface SiteLoginModalSettings {
+  phoneLoginEnabled: boolean;
   closeAriaLabel: string;
   title: string;
   selectDescription: string;
@@ -359,7 +360,7 @@ export interface SiteSettings {
 }
 
 export const siteSettingsDocId = 'site';
-export const siteSettingsSchemaVersion = 5;
+export const siteSettingsSchemaVersion = 6;
 
 const deprecatedPatientCopy = {
   loginPortalAgreement: 'By continuing, you agree to confidential use of the patient portal.',
@@ -416,6 +417,7 @@ export const defaultSiteSettings: SiteSettings = {
     routeLoaderDescription: 'Loading the next screen.',
   },
   loginModal: {
+    phoneLoginEnabled: true,
     closeAriaLabel: 'Close dialog',
     title: 'Secure Sign In',
     selectDescription:
@@ -1146,6 +1148,7 @@ export function sanitizeSiteSettings(raw: unknown): SiteSettings {
       ),
     },
     loginModal: {
+      phoneLoginEnabled: readBoolean(loginModal.phoneLoginEnabled, defaultSiteSettings.loginModal.phoneLoginEnabled),
       closeAriaLabel: readTrimmedString(loginModal.closeAriaLabel, defaultSiteSettings.loginModal.closeAriaLabel),
       title: readTrimmedString(loginModal.title, defaultSiteSettings.loginModal.title),
       selectDescription: readTrimmedString(

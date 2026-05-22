@@ -46,6 +46,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { signInWithGoogle } = useAuth();
   const { siteSettings } = useSiteSettings();
   const copy = siteSettings.loginModal;
+  const isPhoneLoginEnabled = copy.phoneLoginEnabled;
   const [method, setMethod] = useState<AuthMethod>('select');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
@@ -69,6 +70,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setConfirmationResult(null);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isPhoneLoginEnabled && method !== 'select') {
+      setMethod('select');
+      setOtp('');
+      setConfirmationResult(null);
+    }
+  }, [isPhoneLoginEnabled, method]);
 
   useEffect(() => {
     let isMounted = true;
@@ -121,6 +130,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const handleSendOtp = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!isPhoneLoginEnabled) {
+      return;
+    }
+
     if (!phoneNumber) return toast.error(copy.phoneRequiredError);
 
     const formattedPhone = formatPhoneForFirebase(phoneNumber);
@@ -237,20 +250,24 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     {copy.googleCtaLabel}
                   </button>
 
-                  <div className="relative flex items-center py-3">
-                    <div className="flex-grow border-t border-[rgb(var(--theme-line-rgb)/0.3)]" />
-                    <span className="mx-4 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[rgb(var(--theme-muted-rgb))]">{copy.dividerLabel}</span>
-                    <div className="flex-grow border-t border-[rgb(var(--theme-line-rgb)/0.3)]" />
-                  </div>
+                  {isPhoneLoginEnabled && (
+                    <>
+                      <div className="relative flex items-center py-3">
+                        <div className="flex-grow border-t border-[rgb(var(--theme-line-rgb)/0.3)]" />
+                        <span className="mx-4 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[rgb(var(--theme-muted-rgb))]">{copy.dividerLabel}</span>
+                        <div className="flex-grow border-t border-[rgb(var(--theme-line-rgb)/0.3)]" />
+                      </div>
 
-                  <button
-                    onClick={() => setMethod('phone_start')}
-                    disabled={loading}
-                    className="theme-button-primary w-full rounded-[calc(var(--theme-radius-md)+0.1rem)] py-3.5"
-                  >
-                    <Smartphone className="h-5 w-5" />
-                    {copy.phoneCtaLabel}
-                  </button>
+                      <button
+                        onClick={() => setMethod('phone_start')}
+                        disabled={loading}
+                        className="theme-button-primary w-full rounded-[calc(var(--theme-radius-md)+0.1rem)] py-3.5"
+                      >
+                        <Smartphone className="h-5 w-5" />
+                        {copy.phoneCtaLabel}
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               )}
 

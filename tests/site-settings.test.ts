@@ -38,8 +38,21 @@ describe('site settings sanitizer', () => {
     expect(sanitized.homepage.sectionOrder[0]).toBe('booking');
     expect(sanitized.homepage.visibility.art).toBe(false);
     expect(sanitized.homepage.labels.profile).toBe(defaultSiteSettings.homepage.labels.profile);
+    expect(sanitized.loginModal.phoneLoginEnabled).toBe(true);
     expect(sanitized.hero.trustCards.length).toBeGreaterThan(0);
     expect(sanitized.consultationDesk.serviceTypes.length).toBeGreaterThan(0);
+  });
+
+  it('preserves the mobile number login toggle', () => {
+    const sanitized = sanitizeSiteSettings({
+      ...defaultSiteSettings,
+      loginModal: {
+        ...defaultSiteSettings.loginModal,
+        phoneLoginEnabled: false,
+      },
+    });
+
+    expect(sanitized.loginModal.phoneLoginEnabled).toBe(false);
   });
 
   it('keeps valid structured rows and strips invalid rows', () => {
