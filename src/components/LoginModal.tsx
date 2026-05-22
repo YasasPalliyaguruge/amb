@@ -23,8 +23,16 @@ type AuthMethod = 'select' | 'phone_start' | 'phone_verify';
 function formatPhoneForFirebase(phoneNumber: string) {
   const compactPhone = phoneNumber.trim().replace(/[\s().-]/g, '');
 
+  if (compactPhone.startsWith('+940')) {
+    return `+94${compactPhone.substring(4)}`;
+  }
+
   if (compactPhone.startsWith('0')) {
     return `+94${compactPhone.substring(1)}`;
+  }
+
+  if (compactPhone.startsWith('940')) {
+    return `+94${compactPhone.substring(3)}`;
   }
 
   if (!compactPhone.startsWith('+')) {
