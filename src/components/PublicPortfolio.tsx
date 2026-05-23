@@ -20,6 +20,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import type { HomepageSectionId } from '../siteSettings/siteSettings';
 import { recordPerformanceMetric } from '../utils/performanceMonitor';
 import { dismissInitialBootLoader } from '../utils/bootLoader';
+import { preloadArtImages } from '../utils/artAssets';
 
 let publicExperienceModulesPromise: Promise<void> | null = null;
 
@@ -193,6 +194,7 @@ export default function PublicPortfolio() {
 
     let isMounted = true;
     void warmPublicMainSplineAssets();
+    preloadArtImages(siteSettings);
 
     preloadPublicBelowFoldExperience().then(() => {
       if (isMounted) {
@@ -203,7 +205,7 @@ export default function PublicPortfolio() {
     return () => {
       isMounted = false;
     };
-  }, [shouldLoadHeroExperience]);
+  }, [shouldLoadHeroExperience, siteSettings]);
 
   useEffect(() => {
     const minimumLoaderDelay = isMobileViewport ? 720 : PUBLIC_MINIMUM_LOADER_MS;

@@ -2,33 +2,11 @@ import { motion } from 'framer-motion';
 import { ArrowUpRight, GalleryVerticalEnd } from 'lucide-react';
 import InteractivePlane from './InteractivePlane';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
-import { frameSequenceManifest } from '../theme/frameSequenceManifest';
-
-const artImages = [
-  '123846',
-  '123854',
-  '123924',
-  '124029',
-].map((time) => `/art/Screenshot 2026-03-23 ${time}.png`);
-
-function uniqueGalleryImages(primaryItems: string[], fallbackItems: string[], featureImage: string, limit: number) {
-  const seen = new Set<string>([featureImage].filter(Boolean));
-
-  return [...primaryItems, ...fallbackItems].filter((item) => {
-    if (!item || seen.has(item)) {
-      return false;
-    }
-
-    seen.add(item);
-    return true;
-  }).slice(0, limit);
-}
+import { resolveArtImageUrls } from '../utils/artAssets';
 
 export default function DoodleArt() {
   const { siteSettings } = useSiteSettings();
-  const scene = frameSequenceManifest[siteSettings.motion.artSceneId] ?? frameSequenceManifest.studio;
-  const featureImage = siteSettings.media.artFeatureUrl || scene.fallback;
-  const galleryImages = uniqueGalleryImages(siteSettings.media.artGalleryUrls, artImages, featureImage, 4);
+  const { scene, featureImage, galleryImages } = resolveArtImageUrls(siteSettings);
 
   return (
     <section className="section-shell section-shell--airy">
@@ -70,7 +48,8 @@ export default function DoodleArt() {
                   height={880}
                   className="art-feature-image aspect-[16/11] w-full object-cover"
                   style={{ objectPosition: scene.objectPosition ?? 'center center' }}
-                  loading="lazy"
+                  loading="eager"
+                  fetchPriority="high"
                   decoding="async"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgb(var(--theme-ink-rgb)/0.52)_100%)]" />
@@ -133,7 +112,8 @@ export default function DoodleArt() {
                     alt={`${siteSettings.artStudio.galleryAltPrefix} ${index + 1}`}
                     width={720}
                     height={900}
-                    loading="lazy"
+                    loading="eager"
+                    fetchPriority={index < 2 ? 'high' : 'low'}
                     decoding="async"
                     className={`art-gallery-image w-full object-cover ${
                       index === 0 ? 'aspect-[4/5]' : index === 1 ? 'aspect-[4/4.8]' : index === 2 ? 'aspect-[4/5.3]' : 'aspect-[16/7.2]'
