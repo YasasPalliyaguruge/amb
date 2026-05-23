@@ -2514,11 +2514,7 @@
   }
 
   .hero-cardless-guide--vertical {
-    top: 6%;
-    bottom: 8%;
-    left: 52%;
-    width: 1px;
-    background: linear-gradient(180deg, transparent, rgb(var(--theme-primary-rgb) / 0.42), transparent);
+    display: none;
   }
 
   .hero-cardless-guide--baseline {
