@@ -4084,6 +4084,10 @@
   }
 }
 
+  .public-nav-strapline__mobile {
+    display: none;
+  }
+
   @media (max-width: 640px) {
     .public-spline-preloader {
       display: none !important;
@@ -4115,11 +4119,19 @@
     }
 
     .public-nav-strapline {
-      max-width: 100%;
-      overflow: hidden;
+      max-width: none;
+      overflow: visible;
       white-space: nowrap;
-      font-size: 0.48rem;
+      font-size: 0.5rem;
       letter-spacing: 0.12em;
+    }
+
+    .public-nav-strapline__desktop {
+      display: none;
+    }
+
+    .public-nav-strapline__mobile {
+      display: inline;
     }
 
     .section-shell:not(.section-shell--hero):not(.section-shell--footer) {

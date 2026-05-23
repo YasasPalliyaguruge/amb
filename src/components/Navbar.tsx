@@ -26,6 +26,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
   const displayName = profile?.name || user?.displayName || siteSettings.branding.userFallbackLabel;
   const displayContact = profile?.email || user?.email || profile?.phone || user?.phoneNumber || '';
   const displayFirstName = displayName.split(' ')[0] || siteSettings.branding.userFallbackLabel;
+  const mobileStrapline = siteSettings.branding.strapline.replace(/\s*-\s*Pedagogy\b/i, '').trim();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 24);
@@ -140,7 +141,8 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
           >
             <span className="font-heading text-3xl font-semibold">{siteSettings.branding.wordmark}</span>
             <span className="public-nav-strapline mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-[rgb(var(--theme-muted-rgb))]">
-              {siteSettings.branding.strapline}
+              <span className="public-nav-strapline__desktop">{siteSettings.branding.strapline}</span>
+              <span className="public-nav-strapline__mobile">{mobileStrapline}</span>
             </span>
           </a>
 
@@ -274,8 +276,9 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                   onClick={(event) => handleNavLinkClick(event, '/#home')}
                 >
                   <span className="font-heading text-3xl font-semibold">{siteSettings.branding.wordmark}</span>
-                  <span className="mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-[rgb(var(--theme-muted-rgb))]">
-                    {siteSettings.branding.strapline}
+                  <span className="public-nav-strapline mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-[rgb(var(--theme-muted-rgb))]">
+                    <span className="public-nav-strapline__desktop">{siteSettings.branding.strapline}</span>
+                    <span className="public-nav-strapline__mobile">{mobileStrapline}</span>
                   </span>
                 </a>
                 <button
