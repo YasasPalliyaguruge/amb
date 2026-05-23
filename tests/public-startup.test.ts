@@ -13,25 +13,9 @@ describe('public startup helpers', () => {
         arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
-        hasCoffeeLoaderVisibleTimeElapsed: false,
-        isPreloaderSplineReady: false,
-        hasLoaderSafetyElapsed: false,
-        isSplineBackgroundReady: true,
-        hasMainSplineSafetyElapsed: false,
-      })
-    ).toBe(false);
-
-    expect(
-      isPublicExperiencePrepared({
-        areSiteSettingsReady: true,
-        arePublicSectionsReady: true,
-        arePublicAssetsReady: true,
-        hasMinimumLoaderTimeElapsed: true,
-        hasCoffeeLoaderVisibleTimeElapsed: false,
-        isPreloaderSplineReady: false,
-        hasLoaderSafetyElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: true,
+        isPreloaderSplineReady: true,
         isSplineBackgroundReady: false,
-        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
 
@@ -42,26 +26,36 @@ describe('public startup helpers', () => {
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: true,
-        isPreloaderSplineReady: false,
-        hasLoaderSafetyElapsed: true,
-        isSplineBackgroundReady: false,
-        hasMainSplineSafetyElapsed: false,
-      })
-    ).toBe(false);
-
-    expect(
-      isPublicExperiencePrepared({
-        areSiteSettingsReady: true,
-        arePublicSectionsReady: true,
-        arePublicAssetsReady: true,
-        hasMinimumLoaderTimeElapsed: true,
-        hasCoffeeLoaderVisibleTimeElapsed: true,
-        isPreloaderSplineReady: false,
-        hasLoaderSafetyElapsed: true,
+        isPreloaderSplineReady: true,
         isSplineBackgroundReady: true,
-        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(true);
+  });
+
+  it('does not reveal the public page while the coffee preloader or public chunks are still pending', () => {
+    expect(
+      isPublicExperiencePrepared({
+        areSiteSettingsReady: true,
+        arePublicSectionsReady: false,
+        arePublicAssetsReady: true,
+        hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: true,
+        isPreloaderSplineReady: true,
+        isSplineBackgroundReady: true,
+      })
+    ).toBe(false);
+
+    expect(
+      isPublicExperiencePrepared({
+        areSiteSettingsReady: true,
+        arePublicSectionsReady: true,
+        arePublicAssetsReady: true,
+        hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: false,
+        isPreloaderSplineReady: true,
+        isSplineBackgroundReady: true,
+      })
+    ).toBe(false);
 
     expect(
       isPublicExperiencePrepared({
@@ -71,11 +65,9 @@ describe('public startup helpers', () => {
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: true,
         isPreloaderSplineReady: false,
-        hasLoaderSafetyElapsed: true,
-        isSplineBackgroundReady: false,
-        hasMainSplineSafetyElapsed: true,
+        isSplineBackgroundReady: true,
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('keeps the public page hidden until live site settings resolve', () => {
@@ -87,9 +79,7 @@ describe('public startup helpers', () => {
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: true,
         isPreloaderSplineReady: true,
-        hasLoaderSafetyElapsed: false,
         isSplineBackgroundReady: true,
-        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
   });

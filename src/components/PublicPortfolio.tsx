@@ -7,15 +7,13 @@ import {
   getPublicStartupUiState,
   isPublicExperiencePrepared,
   PUBLIC_LOADER_SCENE_EXIT_MS,
-  PUBLIC_LOADER_SCENE_SAFETY_MS,
-  PUBLIC_MAIN_SCENE_SAFETY_MS,
   PUBLIC_MINIMUM_LOADER_MS,
   PUBLIC_COFFEE_LOADER_VISIBLE_MS,
   PUBLIC_SITE_HANDOFF_MS,
   shouldDismissInitialBootLoader,
   type PublicStartupPhase,
 } from './cinematic/publicStartup';
-import { isMobileSplineViewport } from './cinematic/splineWarmup';
+import { isMobileSplineViewport, warmPublicMainSplineAssets } from './cinematic/splineWarmup';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import type { HomepageSectionId } from '../siteSettings/siteSettings';
@@ -153,25 +151,19 @@ export default function PublicPortfolio() {
   const [isSplineBackgroundReady, setIsSplineBackgroundReady] = useState(false);
   const [isPreloaderSplineReady, setIsPreloaderSplineReady] = useState(false);
   const [arePublicAssetsReady, setArePublicAssetsReady] = useState(false);
+  const [arePublicSectionsReady, setArePublicSectionsReady] = useState(false);
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
   const [hasCoffeeLoaderVisibleTimeElapsed, setHasCoffeeLoaderVisibleTimeElapsed] = useState(false);
-  const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
-  const [hasMainSplineSafetyElapsed, setHasMainSplineSafetyElapsed] = useState(false);
   const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
   const { siteSettings, loading: siteSettingsLoading } = useSiteSettings();
   const shouldUseSplinePreloader = !isMobileViewport;
-  const effectivePublicSectionsReady = true;
-  const effectivePublicAssetsReady = isMobileViewport ? true : arePublicAssetsReady;
+  const shouldLoadPublicExperience = isMobileViewport || isPreloaderSplineReady;
+  const effectivePublicSectionsReady = arePublicSectionsReady;
+  const effectivePublicAssetsReady = arePublicAssetsReady;
   const effectiveSplineBackgroundReady = isSplineBackgroundReady;
-  const effectiveMainSplineSafetyElapsed = hasMainSplineSafetyElapsed;
-  const isMainSplineReadyOrTimedOut = effectiveSplineBackgroundReady || effectiveMainSplineSafetyElapsed;
-  const effectivePreloaderReady = shouldUseSplinePreloader
-    ? isPreloaderSplineReady || isMainSplineReadyOrTimedOut
-    : true;
-  const effectiveLoaderSafetyElapsed = shouldUseSplinePreloader ? hasLoaderSafetyElapsed : true;
-  const effectiveCoffeeLoaderVisibleTimeElapsed =
-    shouldUseSplinePreloader && isMainSplineReadyOrTimedOut ? true : hasCoffeeLoaderVisibleTimeElapsed;
-  const shouldLoadMainSplineScene = true;
+  const effectivePreloaderReady = shouldUseSplinePreloader ? isPreloaderSplineReady : true;
+  const effectiveCoffeeLoaderVisibleTimeElapsed = shouldUseSplinePreloader ? hasCoffeeLoaderVisibleTimeElapsed : true;
+  const shouldLoadMainSplineScene = shouldLoadPublicExperience;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -191,9 +183,7 @@ export default function PublicPortfolio() {
         hasMinimumLoaderTimeElapsed,
         hasCoffeeLoaderVisibleTimeElapsed: effectiveCoffeeLoaderVisibleTimeElapsed,
         isPreloaderSplineReady: effectivePreloaderReady,
-        hasLoaderSafetyElapsed: effectiveLoaderSafetyElapsed,
         isSplineBackgroundReady: effectiveSplineBackgroundReady,
-        hasMainSplineSafetyElapsed: effectiveMainSplineSafetyElapsed,
       }),
     [
       effectivePublicSectionsReady,
@@ -202,9 +192,7 @@ export default function PublicPortfolio() {
       hasMinimumLoaderTimeElapsed,
       effectiveCoffeeLoaderVisibleTimeElapsed,
       effectivePreloaderReady,
-      effectiveLoaderSafetyElapsed,
       effectiveSplineBackgroundReady,
-      effectiveMainSplineSafetyElapsed,
     ]
   );
 
@@ -245,18 +233,30 @@ export default function PublicPortfolio() {
   }, [startupPhase]);
 
   useEffect(() => {
+    if (!shouldLoadPublicExperience) {
+      return;
+    }
+
+    let isMounted = true;
+    void warmPublicMainSplineAssets();
+
+    preloadPublicExperience().then(() => {
+      if (isMounted) {
+        setArePublicSectionsReady(true);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [shouldLoadPublicExperience]);
+
+  useEffect(() => {
     const minimumLoaderDelay = isMobileViewport ? 720 : PUBLIC_MINIMUM_LOADER_MS;
     const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), minimumLoaderDelay);
-    const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), PUBLIC_LOADER_SCENE_SAFETY_MS);
-    const mainSplineSafetyTimer = window.setTimeout(
-      () => setHasMainSplineSafetyElapsed(true),
-      PUBLIC_MAIN_SCENE_SAFETY_MS
-    );
 
     return () => {
       window.clearTimeout(minimumTimer);
-      window.clearTimeout(safetyTimer);
-      window.clearTimeout(mainSplineSafetyTimer);
     };
   }, [isMobileViewport]);
 
@@ -288,17 +288,8 @@ export default function PublicPortfolio() {
   }, [startupPhase]);
 
   useEffect(() => {
-    if (!shouldUseSplinePreloader || startupPhase !== 'loading') {
-      return;
-    }
-
-    const bootHandoffTimer = window.setTimeout(dismissInitialBootLoader, 2800);
-    return () => window.clearTimeout(bootHandoffTimer);
-  }, [shouldUseSplinePreloader, startupPhase]);
-
-  useEffect(() => {
     const canDismissBootLoader = shouldUseSplinePreloader
-      ? effectivePreloaderReady || hasLoaderSafetyElapsed
+      ? effectivePreloaderReady
       : publicExperiencePrepared;
 
     if (!shouldDismissInitialBootLoader(startupPhase, canDismissBootLoader)) {
@@ -306,7 +297,7 @@ export default function PublicPortfolio() {
     }
 
     dismissInitialBootLoader();
-  }, [effectivePreloaderReady, hasLoaderSafetyElapsed, publicExperiencePrepared, shouldUseSplinePreloader, startupPhase]);
+  }, [effectivePreloaderReady, publicExperiencePrepared, shouldUseSplinePreloader, startupPhase]);
 
   useEffect(() => {
     if (!publicExperiencePrepared || startupPhase !== 'loading') {
@@ -403,27 +394,31 @@ export default function PublicPortfolio() {
           aria-busy={isPublicExperienceReady ? undefined : 'true'}
           inert={isPublicExperienceVisible ? undefined : true}
         >
-          <a href="#main-content" className="skip-link">
-            {siteSettings.appCopy.skipLinkLabel}
-          </a>
-          <Navbar onLoginClick={openLoginModal} />
-          <main id="main-content" className="pb-28 lg:pb-0">
-            {visibleSections.map((sectionId) => (
-              <Suspense key={sectionId} fallback={sectionId === 'hero' ? null : <SectionLoader />}>
-                {renderSection(sectionId)}
+          {shouldLoadPublicExperience && (
+            <>
+              <a href="#main-content" className="skip-link">
+                {siteSettings.appCopy.skipLinkLabel}
+              </a>
+              <Navbar onLoginClick={openLoginModal} />
+              <main id="main-content" className="pb-28 lg:pb-0">
+                {visibleSections.map((sectionId) => (
+                  <Suspense key={sectionId} fallback={sectionId === 'hero' ? null : <SectionLoader />}>
+                    {renderSection(sectionId)}
+                  </Suspense>
+                ))}
+              </main>
+              <Suspense fallback={null}>
+                <Footer />
               </Suspense>
-            ))}
-          </main>
-          <Suspense fallback={null}>
-            <Footer />
-          </Suspense>
-          {isLoginModalOpen && (
-            <Suspense fallback={null}>
-              <LoginModal
-                isOpen={isLoginModalOpen}
-                onClose={closeLoginModal}
-              />
-            </Suspense>
+              {isLoginModalOpen && (
+                <Suspense fallback={null}>
+                  <LoginModal
+                    isOpen={isLoginModalOpen}
+                    onClose={closeLoginModal}
+                  />
+                </Suspense>
+              )}
+            </>
           )}
         </div>
       </div>

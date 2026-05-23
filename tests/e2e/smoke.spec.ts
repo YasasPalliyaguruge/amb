@@ -9,6 +9,42 @@ const waitForPublicSite = async (page: Page) => {
 };
 
 test('homepage renders key hero content', async ({ page }) => {
+  await page.addInitScript(() => {
+    const seen = {
+      preloaderMounted: false,
+      siteReadyBeforePreloader: false,
+    };
+
+    const inspect = () => {
+      if (document.querySelector('.public-spline-preloader')) {
+        seen.preloaderMounted = true;
+      }
+
+      if (
+        document.querySelector('.public-site--ready') &&
+        !seen.preloaderMounted
+      ) {
+        seen.siteReadyBeforePreloader = true;
+      }
+    };
+
+    // @ts-expect-error test probe
+    window.__desktopStartupProbe = seen;
+
+    const installObserver = () => {
+      if (!document.documentElement) {
+        window.requestAnimationFrame(installObserver);
+        return;
+      }
+
+      const observer = new MutationObserver(inspect);
+      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+      inspect();
+    };
+
+    installObserver();
+  });
+
   await page.goto('/');
   await expect
     .poll(async () => {
@@ -27,6 +63,14 @@ test('homepage renders key hero content', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Psychological support that stays clear, private, and grounded\./i })).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole('link', { name: 'Book a Consultation' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
+
+  const startupProbe = await page.evaluate(() =>
+    // @ts-expect-error test probe
+    window.__desktopStartupProbe
+  );
+
+  expect(startupProbe.preloaderMounted).toBe(true);
+  expect(startupProbe.siteReadyBeforePreloader).toBe(false);
 });
 
 test('sign-in modal opens and closes with Escape', async ({ page }) => {

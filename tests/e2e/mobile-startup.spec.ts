@@ -111,7 +111,7 @@ const expectTextUsesThemeVar = async (
   expect(Number.parseFloat(alpha)).toBeGreaterThanOrEqual(minimumAlpha);
 };
 
-test('mobile startup keeps the intro to the AMB boot screen and never mounts the spline preloader', async ({ page }) => {
+test('mobile startup keeps the AMB boot screen, full page content, and never mounts the spline preloader', async ({ page }) => {
   await page.addInitScript(() => {
     const seen = { preloaderMounted: false };
 
@@ -136,6 +136,7 @@ test('mobile startup keeps the intro to the AMB boot screen and never mounts the
   await waitForPublicSite(page);
   await expect(page.locator('.public-spline-preloader')).toHaveCount(0);
   await expect(page.locator('#initial-boot-loader')).toHaveCount(0);
+  await expect(page.locator('.section-frame > .theme-panel-soft.animate-pulse')).toHaveCount(0);
 
   const preloaderMounted = await page.evaluate(() =>
     // @ts-expect-error test probe
@@ -143,6 +144,10 @@ test('mobile startup keeps the intro to the AMB boot screen and never mounts the
   );
 
   expect(preloaderMounted).toBe(false);
+
+  await page.locator('#consultation-desk').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('heading', { name: 'Select a Date' })).toBeVisible();
+  await expect(page.locator('.section-frame > .theme-panel-soft.animate-pulse')).toHaveCount(0);
 });
 
 test('mobile text stays readable in dark and light theme overrides', async ({ page }) => {

@@ -4134,11 +4134,6 @@
       display: inline;
     }
 
-    .section-shell:not(.section-shell--hero):not(.section-shell--footer) {
-      content-visibility: auto;
-      contain-intrinsic-size: 920px;
-    }
-
     .theme-panel,
     .theme-panel-soft,
     .theme-panel-dark,

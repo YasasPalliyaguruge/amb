@@ -46,17 +46,23 @@ export function warmSplineScene(sceneUrl: string) {
 
 export function warmPublicSplineAssets() {
   if (!publicSplineWarmupPromise) {
-    const tasks: Promise<unknown>[] = [
-      loadSplineRuntime(),
-      warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE),
-    ];
+    const tasks: Promise<unknown>[] = [loadSplineRuntime()];
 
-    if (!isMobileSplineViewport()) {
-      tasks.push(warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE));
-    }
+    tasks.push(
+      isMobileSplineViewport()
+        ? warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE)
+        : warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE)
+    );
 
     publicSplineWarmupPromise = Promise.allSettled(tasks);
   }
 
   return publicSplineWarmupPromise;
+}
+
+export function warmPublicMainSplineAssets() {
+  return Promise.allSettled([
+    loadSplineRuntime(),
+    warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE),
+  ]);
 }
