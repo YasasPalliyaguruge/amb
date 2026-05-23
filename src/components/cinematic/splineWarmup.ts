@@ -46,11 +46,7 @@ export function warmSplineScene(sceneUrl: string) {
 
 export function warmPublicSplineAssets() {
   if (!publicSplineWarmupPromise) {
-    const tasks: Promise<unknown>[] = [loadSplineRuntime(), warmSplineScene(PUBLIC_BACKGROUND_SPLINE_SCENE)];
-
-    if (!isMobileSplineViewport()) {
-      tasks.push(warmSplineScene(PUBLIC_LOADING_SPLINE_SCENE));
-    }
+    const tasks: Promise<unknown>[] = [loadSplineRuntime()];
 
     publicSplineWarmupPromise = Promise.allSettled(tasks);
   }

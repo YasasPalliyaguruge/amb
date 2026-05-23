@@ -160,10 +160,14 @@ export default function PublicPortfolio() {
   const shouldUseSplinePreloader = !isMobileViewport;
   const effectivePublicSectionsReady = true;
   const effectivePublicAssetsReady = isMobileViewport ? true : arePublicAssetsReady;
-  const effectivePreloaderReady = shouldUseSplinePreloader ? isPreloaderSplineReady : true;
+  const effectiveSplineBackgroundReady = isSplineBackgroundReady;
+  const isMainSplineReady = effectiveSplineBackgroundReady;
+  const effectivePreloaderReady = shouldUseSplinePreloader
+    ? isPreloaderSplineReady || isMainSplineReady
+    : true;
   const effectiveLoaderSafetyElapsed = shouldUseSplinePreloader ? hasLoaderSafetyElapsed : true;
-  const effectiveSplineBackgroundReady = true;
-  const effectiveMainSplineSafetyElapsed = true;
+  const effectiveCoffeeLoaderVisibleTimeElapsed =
+    shouldUseSplinePreloader && isMainSplineReady ? true : hasCoffeeLoaderVisibleTimeElapsed;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -181,28 +185,25 @@ export default function PublicPortfolio() {
         arePublicSectionsReady: effectivePublicSectionsReady,
         arePublicAssetsReady: effectivePublicAssetsReady,
         hasMinimumLoaderTimeElapsed,
-        hasCoffeeLoaderVisibleTimeElapsed,
+        hasCoffeeLoaderVisibleTimeElapsed: effectiveCoffeeLoaderVisibleTimeElapsed,
         isPreloaderSplineReady: effectivePreloaderReady,
         hasLoaderSafetyElapsed: effectiveLoaderSafetyElapsed,
         isSplineBackgroundReady: effectiveSplineBackgroundReady,
-        hasMainSplineSafetyElapsed: effectiveMainSplineSafetyElapsed,
       }),
     [
       effectivePublicSectionsReady,
       effectivePublicAssetsReady,
       siteSettingsLoading,
       hasMinimumLoaderTimeElapsed,
-      hasCoffeeLoaderVisibleTimeElapsed,
+      effectiveCoffeeLoaderVisibleTimeElapsed,
       effectivePreloaderReady,
       effectiveLoaderSafetyElapsed,
       effectiveSplineBackgroundReady,
-      effectiveMainSplineSafetyElapsed,
     ]
   );
 
   const {
     isPublicExperienceReady,
-    isPublicExperienceVisible,
     shouldRenderPreloader,
     shouldHidePreloaderScene,
     shouldFadePreloaderLayer,
@@ -274,12 +275,14 @@ export default function PublicPortfolio() {
   }, [startupPhase]);
 
   useEffect(() => {
-    if (!shouldDismissInitialBootLoader(startupPhase, effectivePreloaderReady)) {
+    const canDismissBootLoader = shouldUseSplinePreloader ? effectivePreloaderReady : publicExperiencePrepared;
+
+    if (!shouldDismissInitialBootLoader(startupPhase, canDismissBootLoader)) {
       return;
     }
 
     dismissInitialBootLoader();
-  }, [effectivePreloaderReady, startupPhase]);
+  }, [effectivePreloaderReady, publicExperiencePrepared, shouldUseSplinePreloader, startupPhase]);
 
   useEffect(() => {
     if (!publicExperiencePrepared || startupPhase !== 'loading') {
@@ -356,7 +359,7 @@ export default function PublicPortfolio() {
       <div className={`public-site relative public-site--${startupPhase}`}>
         <Suspense fallback={null}>
           <SplineBackground
-            isVisible={isPublicExperienceVisible}
+            isVisible
             onSceneReady={handleBackgroundReady}
           />
         </Suspense>
@@ -365,6 +368,7 @@ export default function PublicPortfolio() {
             <PublicSplinePreloader
               isLeaving={shouldFadePreloaderLayer}
               isSceneHidden={shouldHidePreloaderScene}
+              renderScene={false}
               onSceneReady={handlePreloaderReady}
             />
           </Suspense>

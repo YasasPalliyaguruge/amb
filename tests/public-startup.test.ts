@@ -6,7 +6,7 @@ import {
 } from '../src/components/cinematic/publicStartup';
 
 describe('public startup helpers', () => {
-  it('keeps the experience blocked until both spline gates or safety timers resolve', () => {
+  it('keeps the experience blocked until the main spline background is ready', () => {
     expect(
       isPublicExperiencePrepared({
         areSiteSettingsReady: true,
@@ -17,7 +17,6 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: false,
         isSplineBackgroundReady: true,
-        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
 
@@ -31,9 +30,8 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: true,
         isSplineBackgroundReady: false,
-        hasMainSplineSafetyElapsed: true,
       })
-    ).toBe(true);
+    ).toBe(false);
 
     expect(
       isPublicExperiencePrepared({
@@ -45,7 +43,19 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: true,
         isSplineBackgroundReady: false,
-        hasMainSplineSafetyElapsed: true,
+      })
+    ).toBe(false);
+
+    expect(
+      isPublicExperiencePrepared({
+        areSiteSettingsReady: true,
+        arePublicSectionsReady: true,
+        arePublicAssetsReady: true,
+        hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: true,
+        isPreloaderSplineReady: false,
+        hasLoaderSafetyElapsed: true,
+        isSplineBackgroundReady: true,
       })
     ).toBe(true);
   });
@@ -61,7 +71,6 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: true,
         hasLoaderSafetyElapsed: false,
         isSplineBackgroundReady: true,
-        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
   });

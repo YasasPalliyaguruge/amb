@@ -217,6 +217,17 @@
       </div>
     </noscript>
     <div id="root"></div>
+    <script type="module">
+      if (window.location.pathname === '/') {
+        import('/src/components/cinematic/splineWarmup.ts')
+          .then(function (module) {
+            module.warmPublicSplineAssets();
+          })
+          .catch(function () {
+            // The React route loader will still request the scene if warmup fails.
+          });
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

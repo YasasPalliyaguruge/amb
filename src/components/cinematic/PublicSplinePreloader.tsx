@@ -6,10 +6,16 @@ import { PUBLIC_LOADING_SPLINE_SCENE } from './splineWarmup';
 type PublicSplinePreloaderProps = {
   isLeaving: boolean;
   isSceneHidden: boolean;
+  renderScene?: boolean;
   onSceneReady?: () => void;
 };
 
-export default memo(function PublicSplinePreloader({ isLeaving, isSceneHidden, onSceneReady }: PublicSplinePreloaderProps) {
+export default memo(function PublicSplinePreloader({
+  isLeaving,
+  isSceneHidden,
+  renderScene = true,
+  onSceneReady,
+}: PublicSplinePreloaderProps) {
   const [isCoffeeSceneReady, setIsCoffeeSceneReady] = useState(false);
 
   const handleSceneReady = useCallback((app: Application) => {
@@ -30,14 +36,16 @@ export default memo(function PublicSplinePreloader({ isLeaving, isSceneHidden, o
       role="status"
       aria-label="Loading website"
     >
-      <SplineScene
-        scene={PUBLIC_LOADING_SPLINE_SCENE}
-        className="public-spline-preloader__scene"
-        decorative
-        warmBeforeRender={false}
-        onLoad={handleSceneReady}
-        onError={handleSceneError}
-      />
+      {renderScene && (
+        <SplineScene
+          scene={PUBLIC_LOADING_SPLINE_SCENE}
+          className="public-spline-preloader__scene"
+          decorative
+          warmBeforeRender={false}
+          onLoad={handleSceneReady}
+          onError={handleSceneError}
+        />
+      )}
     </div>
   );
 });
