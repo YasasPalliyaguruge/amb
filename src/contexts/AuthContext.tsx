@@ -79,11 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
-        const [{ GoogleAuthProvider, getRedirectResult, onAuthStateChanged }, firestore, { auth }, { db }] = await Promise.all([
+        const [{ GoogleAuthProvider, getRedirectResult, onAuthStateChanged }, { auth }] = await Promise.all([
           import('firebase/auth'),
-          import('firebase/firestore'),
           import('../firebase-auth'),
-          import('../firebase-db'),
         ]);
 
         if (!isMounted) {
@@ -121,8 +119,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               timezone: '',
             });
             setRole(isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified) ? 'admin' : null);
-            const userRef = firestore.doc(db, 'users', currentUser.uid);
             try {
+              const [firestore, { db }] = await Promise.all([
+                import('firebase/firestore'),
+                import('../firebase-db'),
+              ]);
+
+              if (!isCurrentAuthEvent()) {
+                return;
+              }
+
+              const userRef = firestore.doc(db, 'users', currentUser.uid);
               unsubscribeRole?.();
               unsubscribeRole = firestore.onSnapshot(
                 userRef,
@@ -200,6 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.error('Error creating user document:', error);
               if (isCurrentAuthEvent()) {
                 setRole(isBootstrapAdminEmail(currentUser.email, currentUser.emailVerified) ? 'admin' : 'client');
+                setLoading(false);
               }
             }
           } else {

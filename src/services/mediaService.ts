@@ -6,14 +6,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore';
-import {
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytes,
-} from 'firebase/storage';
 import { db } from '../firebase-db';
-import { storage } from '../firebase-storage';
 
 export interface MediaAssetRecord {
   id: string;
@@ -44,6 +37,10 @@ export async function uploadMediaAsset(
     category: string;
   }
 ) {
+  const [{ getDownloadURL, ref, uploadBytes }, { storage }] = await Promise.all([
+    import('firebase/storage'),
+    import('../firebase-storage'),
+  ]);
   const timestamp = Date.now();
   const fileSlug = slugify(file.name.replace(/\.[^/.]+$/, '')) || 'asset';
   const extension = file.name.includes('.') ? file.name.split('.').pop() : 'bin';
@@ -90,6 +87,11 @@ export async function updateMediaAssetMetadata(
 }
 
 export async function deleteMediaAsset(asset: Pick<MediaAssetRecord, 'id' | 'storagePath'>) {
+  const [{ deleteObject, ref }, { storage }] = await Promise.all([
+    import('firebase/storage'),
+    import('../firebase-storage'),
+  ]);
+
   await deleteObject(ref(storage, asset.storagePath));
   await deleteDoc(doc(db, 'mediaAssets', asset.id));
 }

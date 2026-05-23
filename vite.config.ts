@@ -18,7 +18,11 @@ export default defineConfig({
           if (normalizedId.includes('/firebase/firestore')) return 'firebase-firestore';
           if (normalizedId.includes('/firebase/storage')) return 'firebase-storage';
           if (normalizedId.includes('firebase')) return 'firebase-vendor';
-          if (normalizedId.includes('framer-motion') || normalizedId.includes('motion') || normalizedId.includes('gsap')) return 'motion-vendor';
+          if (
+            normalizedId.includes('framer-motion') ||
+            normalizedId.includes('/motion-dom/') ||
+            normalizedId.includes('/motion-utils/')
+          ) return 'motion-vendor';
           return 'vendor';
         },
       },
