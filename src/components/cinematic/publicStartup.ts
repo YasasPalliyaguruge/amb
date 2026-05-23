@@ -2,7 +2,8 @@ export type PublicStartupPhase = 'loading' | 'loader-exiting' | 'site-entering' 
 
 export const PUBLIC_MINIMUM_LOADER_MS = 1250;
 export const PUBLIC_COFFEE_LOADER_VISIBLE_MS = 1050;
-export const PUBLIC_LOADER_SCENE_SAFETY_MS = 8500;
+export const PUBLIC_LOADER_SCENE_SAFETY_MS = 4500;
+export const PUBLIC_MAIN_SCENE_SAFETY_MS = 30000;
 export const PUBLIC_LOADER_SCENE_EXIT_MS = 560;
 export const PUBLIC_SITE_HANDOFF_MS = 520;
 
@@ -15,6 +16,7 @@ type PublicExperienceReadiness = {
   isPreloaderSplineReady: boolean;
   hasLoaderSafetyElapsed: boolean;
   isSplineBackgroundReady: boolean;
+  hasMainSplineSafetyElapsed: boolean;
 };
 
 export function isPublicExperiencePrepared({
@@ -26,6 +28,7 @@ export function isPublicExperiencePrepared({
   isPreloaderSplineReady,
   hasLoaderSafetyElapsed,
   isSplineBackgroundReady,
+  hasMainSplineSafetyElapsed,
 }: PublicExperienceReadiness) {
   return Boolean(
     areSiteSettingsReady &&
@@ -34,7 +37,7 @@ export function isPublicExperiencePrepared({
     hasMinimumLoaderTimeElapsed &&
     (hasCoffeeLoaderVisibleTimeElapsed || hasLoaderSafetyElapsed) &&
     (isPreloaderSplineReady || hasLoaderSafetyElapsed) &&
-    isSplineBackgroundReady
+    (isSplineBackgroundReady || hasMainSplineSafetyElapsed)
   );
 }
 

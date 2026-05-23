@@ -17,6 +17,7 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: false,
         isSplineBackgroundReady: true,
+        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
 
@@ -30,6 +31,7 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: true,
         isSplineBackgroundReady: false,
+        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
 
@@ -43,6 +45,7 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: true,
         isSplineBackgroundReady: false,
+        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
 
@@ -56,6 +59,21 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: false,
         hasLoaderSafetyElapsed: true,
         isSplineBackgroundReady: true,
+        hasMainSplineSafetyElapsed: false,
+      })
+    ).toBe(true);
+
+    expect(
+      isPublicExperiencePrepared({
+        areSiteSettingsReady: true,
+        arePublicSectionsReady: true,
+        arePublicAssetsReady: true,
+        hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: true,
+        isPreloaderSplineReady: false,
+        hasLoaderSafetyElapsed: true,
+        isSplineBackgroundReady: false,
+        hasMainSplineSafetyElapsed: true,
       })
     ).toBe(true);
   });
@@ -71,6 +89,7 @@ describe('public startup helpers', () => {
         isPreloaderSplineReady: true,
         hasLoaderSafetyElapsed: false,
         isSplineBackgroundReady: true,
+        hasMainSplineSafetyElapsed: false,
       })
     ).toBe(false);
   });

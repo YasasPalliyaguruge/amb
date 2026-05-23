@@ -2,11 +2,13 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactNo
 import { motion, useReducedMotion, useScroll, useSpring } from 'framer-motion';
 import Navbar from './Navbar';
 import Hero from './Hero';
+import PublicSplinePreloader from './cinematic/PublicSplinePreloader';
 import {
   getPublicStartupUiState,
   isPublicExperiencePrepared,
   PUBLIC_LOADER_SCENE_EXIT_MS,
   PUBLIC_LOADER_SCENE_SAFETY_MS,
+  PUBLIC_MAIN_SCENE_SAFETY_MS,
   PUBLIC_MINIMUM_LOADER_MS,
   PUBLIC_COFFEE_LOADER_VISIBLE_MS,
   PUBLIC_SITE_HANDOFF_MS,
@@ -23,7 +25,6 @@ import { dismissInitialBootLoader } from '../utils/bootLoader';
 let publicExperienceModulesPromise: Promise<void> | null = null;
 
 const SplineBackground = lazy(() => import('./cinematic/SplineBackground'));
-const PublicSplinePreloader = lazy(() => import('./cinematic/PublicSplinePreloader'));
 const LoginModal = lazy(() => import('./LoginModal'));
 const Footer = lazy(() => import('./Footer'));
 const Ethos = lazy(() => import('./Ethos'));
@@ -155,19 +156,22 @@ export default function PublicPortfolio() {
   const [hasMinimumLoaderTimeElapsed, setHasMinimumLoaderTimeElapsed] = useState(false);
   const [hasCoffeeLoaderVisibleTimeElapsed, setHasCoffeeLoaderVisibleTimeElapsed] = useState(false);
   const [hasLoaderSafetyElapsed, setHasLoaderSafetyElapsed] = useState(false);
+  const [hasMainSplineSafetyElapsed, setHasMainSplineSafetyElapsed] = useState(false);
   const [startupPhase, setStartupPhase] = useState<PublicStartupPhase>('loading');
   const { siteSettings, loading: siteSettingsLoading } = useSiteSettings();
   const shouldUseSplinePreloader = !isMobileViewport;
   const effectivePublicSectionsReady = true;
   const effectivePublicAssetsReady = isMobileViewport ? true : arePublicAssetsReady;
   const effectiveSplineBackgroundReady = isSplineBackgroundReady;
-  const isMainSplineReady = effectiveSplineBackgroundReady;
+  const effectiveMainSplineSafetyElapsed = hasMainSplineSafetyElapsed;
+  const isMainSplineReadyOrTimedOut = effectiveSplineBackgroundReady || effectiveMainSplineSafetyElapsed;
   const effectivePreloaderReady = shouldUseSplinePreloader
-    ? isPreloaderSplineReady || isMainSplineReady
+    ? isPreloaderSplineReady || isMainSplineReadyOrTimedOut
     : true;
   const effectiveLoaderSafetyElapsed = shouldUseSplinePreloader ? hasLoaderSafetyElapsed : true;
   const effectiveCoffeeLoaderVisibleTimeElapsed =
-    shouldUseSplinePreloader && isMainSplineReady ? true : hasCoffeeLoaderVisibleTimeElapsed;
+    shouldUseSplinePreloader && isMainSplineReadyOrTimedOut ? true : hasCoffeeLoaderVisibleTimeElapsed;
+  const shouldLoadMainSplineScene = !shouldUseSplinePreloader || isPreloaderSplineReady || hasLoaderSafetyElapsed;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -189,6 +193,7 @@ export default function PublicPortfolio() {
         isPreloaderSplineReady: effectivePreloaderReady,
         hasLoaderSafetyElapsed: effectiveLoaderSafetyElapsed,
         isSplineBackgroundReady: effectiveSplineBackgroundReady,
+        hasMainSplineSafetyElapsed: effectiveMainSplineSafetyElapsed,
       }),
     [
       effectivePublicSectionsReady,
@@ -199,6 +204,7 @@ export default function PublicPortfolio() {
       effectivePreloaderReady,
       effectiveLoaderSafetyElapsed,
       effectiveSplineBackgroundReady,
+      effectiveMainSplineSafetyElapsed,
     ]
   );
 
@@ -240,10 +246,15 @@ export default function PublicPortfolio() {
     const minimumLoaderDelay = isMobileViewport ? 720 : PUBLIC_MINIMUM_LOADER_MS;
     const minimumTimer = window.setTimeout(() => setHasMinimumLoaderTimeElapsed(true), minimumLoaderDelay);
     const safetyTimer = window.setTimeout(() => setHasLoaderSafetyElapsed(true), PUBLIC_LOADER_SCENE_SAFETY_MS);
+    const mainSplineSafetyTimer = window.setTimeout(
+      () => setHasMainSplineSafetyElapsed(true),
+      PUBLIC_MAIN_SCENE_SAFETY_MS
+    );
 
     return () => {
       window.clearTimeout(minimumTimer);
       window.clearTimeout(safetyTimer);
+      window.clearTimeout(mainSplineSafetyTimer);
     };
   }, [isMobileViewport]);
 
@@ -275,14 +286,25 @@ export default function PublicPortfolio() {
   }, [startupPhase]);
 
   useEffect(() => {
-    const canDismissBootLoader = shouldUseSplinePreloader ? effectivePreloaderReady : publicExperiencePrepared;
+    if (!shouldUseSplinePreloader || startupPhase !== 'loading') {
+      return;
+    }
+
+    const bootHandoffTimer = window.setTimeout(dismissInitialBootLoader, 2800);
+    return () => window.clearTimeout(bootHandoffTimer);
+  }, [shouldUseSplinePreloader, startupPhase]);
+
+  useEffect(() => {
+    const canDismissBootLoader = shouldUseSplinePreloader
+      ? effectivePreloaderReady || hasLoaderSafetyElapsed
+      : publicExperiencePrepared;
 
     if (!shouldDismissInitialBootLoader(startupPhase, canDismissBootLoader)) {
       return;
     }
 
     dismissInitialBootLoader();
-  }, [effectivePreloaderReady, publicExperiencePrepared, shouldUseSplinePreloader, startupPhase]);
+  }, [effectivePreloaderReady, hasLoaderSafetyElapsed, publicExperiencePrepared, shouldUseSplinePreloader, startupPhase]);
 
   useEffect(() => {
     if (!publicExperiencePrepared || startupPhase !== 'loading') {
@@ -359,7 +381,7 @@ export default function PublicPortfolio() {
       <div className={`public-site relative public-site--${startupPhase}`}>
         <Suspense fallback={null}>
           <SplineBackground
-            isVisible
+            isVisible={shouldLoadMainSplineScene}
             onSceneReady={handleBackgroundReady}
           />
         </Suspense>
@@ -368,7 +390,6 @@ export default function PublicPortfolio() {
             <PublicSplinePreloader
               isLeaving={shouldFadePreloaderLayer}
               isSceneHidden={shouldHidePreloaderScene}
-              renderScene={false}
               onSceneReady={handlePreloaderReady}
             />
           </Suspense>
