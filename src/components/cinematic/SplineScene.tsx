@@ -54,7 +54,6 @@ class SplineSceneErrorBoundary extends React.Component<SplineSceneErrorBoundaryP
 
 function makeSplineCanvasTransparent(app: Application) {
   const transparentApp = app as TransparentRendererApp;
-  app.setBackgroundColor('rgba(0, 0, 0, 0)');
   transparentApp.renderer?.setClearAlpha?.(0);
   transparentApp.renderer?.setClearColor?.(0x000000, 0);
   app.canvas.style.background = 'transparent';

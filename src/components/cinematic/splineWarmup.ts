@@ -1,5 +1,5 @@
-export const PUBLIC_LOADING_SPLINE_SCENE = '/spline/coffee-loader-clean.splinecode?v=20260427c';
-export const PUBLIC_BACKGROUND_SPLINE_SCENE = '/spline/flower-bee-background-clean.splinecode?v=20260427b';
+export const PUBLIC_LOADING_SPLINE_SCENE = '/spline/coffee-loader-clean.splinecode';
+export const PUBLIC_BACKGROUND_SPLINE_SCENE = '/spline/flower-bee-background-clean.splinecode';
 
 type SplineRuntimeModule = typeof import('@splinetool/react-spline');
 
