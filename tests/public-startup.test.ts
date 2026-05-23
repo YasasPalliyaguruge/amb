@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  arePublicSectionsPrepared,
   getPublicStartupUiState,
-  isPublicExperiencePrepared,
+  isHeroExperiencePrepared,
   shouldDismissInitialBootLoader,
 } from '../src/components/cinematic/publicStartup';
 
 describe('public startup helpers', () => {
   it('keeps the experience blocked until the main spline background is ready', () => {
     expect(
-      isPublicExperiencePrepared({
+      isHeroExperiencePrepared({
         areSiteSettingsReady: true,
-        arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: true,
@@ -20,9 +20,8 @@ describe('public startup helpers', () => {
     ).toBe(false);
 
     expect(
-      isPublicExperiencePrepared({
+      isHeroExperiencePrepared({
         areSiteSettingsReady: true,
-        arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: true,
@@ -32,23 +31,10 @@ describe('public startup helpers', () => {
     ).toBe(true);
   });
 
-  it('does not reveal the public page while the coffee preloader or public chunks are still pending', () => {
+  it('does not reveal the public page while the coffee preloader is still pending', () => {
     expect(
-      isPublicExperiencePrepared({
+      isHeroExperiencePrepared({
         areSiteSettingsReady: true,
-        arePublicSectionsReady: false,
-        arePublicAssetsReady: true,
-        hasMinimumLoaderTimeElapsed: true,
-        hasCoffeeLoaderVisibleTimeElapsed: true,
-        isPreloaderSplineReady: true,
-        isSplineBackgroundReady: true,
-      })
-    ).toBe(false);
-
-    expect(
-      isPublicExperiencePrepared({
-        areSiteSettingsReady: true,
-        arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: false,
@@ -58,9 +44,8 @@ describe('public startup helpers', () => {
     ).toBe(false);
 
     expect(
-      isPublicExperiencePrepared({
+      isHeroExperiencePrepared({
         areSiteSettingsReady: true,
-        arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: true,
@@ -70,11 +55,26 @@ describe('public startup helpers', () => {
     ).toBe(false);
   });
 
+  it('tracks below-fold public section readiness separately from hero reveal', () => {
+    expect(arePublicSectionsPrepared({ arePublicSectionsReady: false })).toBe(false);
+    expect(arePublicSectionsPrepared({ arePublicSectionsReady: true })).toBe(true);
+
+    expect(
+      isHeroExperiencePrepared({
+        areSiteSettingsReady: true,
+        arePublicAssetsReady: true,
+        hasMinimumLoaderTimeElapsed: true,
+        hasCoffeeLoaderVisibleTimeElapsed: true,
+        isPreloaderSplineReady: true,
+        isSplineBackgroundReady: true,
+      })
+    ).toBe(true);
+  });
+
   it('keeps the public page hidden until live site settings resolve', () => {
     expect(
-      isPublicExperiencePrepared({
+      isHeroExperiencePrepared({
         areSiteSettingsReady: false,
-        arePublicSectionsReady: true,
         arePublicAssetsReady: true,
         hasMinimumLoaderTimeElapsed: true,
         hasCoffeeLoaderVisibleTimeElapsed: true,

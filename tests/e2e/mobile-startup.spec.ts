@@ -111,7 +111,7 @@ const expectTextUsesThemeVar = async (
   expect(Number.parseFloat(alpha)).toBeGreaterThanOrEqual(minimumAlpha);
 };
 
-test('mobile startup keeps the AMB boot screen, full page content, and never mounts the spline preloader', async ({ page }) => {
+test('mobile startup keeps the AMB boot screen, reveals the hero first, and never mounts the spline preloader', async ({ page }) => {
   await page.addInitScript(() => {
     const seen = { preloaderMounted: false };
 
@@ -137,6 +137,7 @@ test('mobile startup keeps the AMB boot screen, full page content, and never mou
   await expect(page.locator('.public-spline-preloader')).toHaveCount(0);
   await expect(page.locator('#initial-boot-loader')).toHaveCount(0);
   await expect(page.locator('.section-frame > .theme-panel-soft.animate-pulse')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /Psychological support that stays clear, private, and grounded\./i })).toBeVisible();
 
   const preloaderMounted = await page.evaluate(() =>
     // @ts-expect-error test probe

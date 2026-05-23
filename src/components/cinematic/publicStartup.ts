@@ -7,7 +7,6 @@ export const PUBLIC_SITE_HANDOFF_MS = 520;
 
 type PublicExperienceReadiness = {
   areSiteSettingsReady: boolean;
-  arePublicSectionsReady: boolean;
   arePublicAssetsReady: boolean;
   hasMinimumLoaderTimeElapsed: boolean;
   hasCoffeeLoaderVisibleTimeElapsed: boolean;
@@ -15,9 +14,12 @@ type PublicExperienceReadiness = {
   isSplineBackgroundReady: boolean;
 };
 
-export function isPublicExperiencePrepared({
+type PublicSectionsReadiness = {
+  arePublicSectionsReady: boolean;
+};
+
+export function isHeroExperiencePrepared({
   areSiteSettingsReady,
-  arePublicSectionsReady,
   arePublicAssetsReady,
   hasMinimumLoaderTimeElapsed,
   hasCoffeeLoaderVisibleTimeElapsed,
@@ -26,13 +28,16 @@ export function isPublicExperiencePrepared({
 }: PublicExperienceReadiness) {
   return Boolean(
     areSiteSettingsReady &&
-    arePublicSectionsReady &&
     arePublicAssetsReady &&
     hasMinimumLoaderTimeElapsed &&
     hasCoffeeLoaderVisibleTimeElapsed &&
     isPreloaderSplineReady &&
     isSplineBackgroundReady
   );
+}
+
+export function arePublicSectionsPrepared({ arePublicSectionsReady }: PublicSectionsReadiness) {
+  return Boolean(arePublicSectionsReady);
 }
 
 export function getPublicStartupUiState(startupPhase: PublicStartupPhase) {
