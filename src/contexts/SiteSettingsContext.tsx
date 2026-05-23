@@ -9,6 +9,7 @@ interface SiteSettingsContextValue {
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextValue | undefined>(undefined);
+const SITE_SETTINGS_INITIAL_FALLBACK_MS = 4500;
 
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getInitialSiteSettings());
@@ -18,6 +19,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     let unsubscribe: (() => void) | undefined;
+    const fallbackTimer = window.setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, SITE_SETTINGS_INITIAL_FALLBACK_MS);
 
     void (async () => {
       try {
@@ -37,6 +43,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
               return;
             }
 
+            window.clearTimeout(fallbackTimer);
             const nextSettings = snapshot.exists() ? sanitizeSiteSettings(snapshot.data()) : defaultSiteSettings;
             setSiteSettings(nextSettings);
             writeCachedSiteSettings(nextSettings);
@@ -48,6 +55,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             if (!isMounted) {
               return;
             }
+            window.clearTimeout(fallbackTimer);
             setError('The live website settings could not be loaded, so local defaults are being used.');
             setLoading(false);
           }
@@ -57,6 +65,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         if (!isMounted) {
           return;
         }
+        window.clearTimeout(fallbackTimer);
         setError('The live website settings could not be loaded, so local defaults are being used.');
         setLoading(false);
       }
@@ -64,6 +73,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+      window.clearTimeout(fallbackTimer);
       unsubscribe?.();
     };
   }, []);
