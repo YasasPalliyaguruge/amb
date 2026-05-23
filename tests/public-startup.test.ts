@@ -98,6 +98,7 @@ describe('public startup helpers', () => {
     expect(getPublicStartupUiState('loading')).toEqual({
       isPublicExperienceReady: false,
       isPublicExperienceVisible: false,
+      shouldRevealSplineBackground: false,
       shouldRenderPreloader: true,
       shouldHidePreloaderScene: false,
       shouldFadePreloaderLayer: false,
@@ -106,6 +107,7 @@ describe('public startup helpers', () => {
     expect(getPublicStartupUiState('loader-exiting')).toEqual({
       isPublicExperienceReady: false,
       isPublicExperienceVisible: false,
+      shouldRevealSplineBackground: false,
       shouldRenderPreloader: true,
       shouldHidePreloaderScene: true,
       shouldFadePreloaderLayer: true,
@@ -114,6 +116,7 @@ describe('public startup helpers', () => {
     expect(getPublicStartupUiState('site-entering')).toEqual({
       isPublicExperienceReady: false,
       isPublicExperienceVisible: true,
+      shouldRevealSplineBackground: true,
       shouldRenderPreloader: true,
       shouldHidePreloaderScene: true,
       shouldFadePreloaderLayer: true,
@@ -122,6 +125,7 @@ describe('public startup helpers', () => {
     expect(getPublicStartupUiState('ready')).toEqual({
       isPublicExperienceReady: true,
       isPublicExperienceVisible: true,
+      shouldRevealSplineBackground: true,
       shouldRenderPreloader: false,
       shouldHidePreloaderScene: false,
       shouldFadePreloaderLayer: false,

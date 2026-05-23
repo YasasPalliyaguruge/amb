@@ -8,6 +8,7 @@ const BACKGROUND_SCENE_OBJECT_NAMES = ['plane'];
 
 type SplineBackgroundProps = {
   isVisible?: boolean;
+  shouldLoadScene?: boolean;
   onSceneReady?: () => void;
 };
 
@@ -34,21 +35,21 @@ function hideBackgroundObjects(app: Application) {
   window.requestAnimationFrame(() => app.requestRender());
 }
 
-function SplineBackground({ isVisible = true, onSceneReady }: SplineBackgroundProps) {
+function SplineBackground({ isVisible = true, shouldLoadScene = isVisible, onSceneReady }: SplineBackgroundProps) {
   const [isHeroActive, setIsHeroActive] = useState(true);
-  const [shouldLoadScene, setShouldLoadScene] = useState(false);
+  const [hasSceneLoadStarted, setHasSceneLoadStarted] = useState(false);
   const hasReportedReady = useRef(false);
 
   useEffect(() => {
-    if (!isVisible || shouldLoadScene) {
+    if (!shouldLoadScene || hasSceneLoadStarted) {
       return;
     }
 
-    setShouldLoadScene(true);
-  }, [isVisible, shouldLoadScene]);
+    setHasSceneLoadStarted(true);
+  }, [hasSceneLoadStarted, shouldLoadScene]);
 
   useEffect(() => {
-    if (!isVisible) {
+    if (!hasSceneLoadStarted) {
       return;
     }
 
@@ -68,7 +69,7 @@ function SplineBackground({ isVisible = true, onSceneReady }: SplineBackgroundPr
 
     observer.observe(hero);
     return () => observer.disconnect();
-  }, [isVisible]);
+  }, [hasSceneLoadStarted]);
 
   const prepareSceneBeforeReveal = useCallback((app: Application) => {
     hideBackgroundObjects(app);
@@ -86,7 +87,7 @@ function SplineBackground({ isVisible = true, onSceneReady }: SplineBackgroundPr
       className={`public-spline-background ${isVisible ? 'public-spline-background--visible' : ''} ${isHeroActive ? 'public-spline-background--hero' : ''}`}
       aria-hidden="true"
     >
-      {shouldLoadScene && (
+      {hasSceneLoadStarted && (
         <SplineScene
           scene={PUBLIC_BACKGROUND_SPLINE_SCENE}
           className="public-spline-background__scene"

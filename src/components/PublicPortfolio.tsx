@@ -171,7 +171,7 @@ export default function PublicPortfolio() {
   const effectiveLoaderSafetyElapsed = shouldUseSplinePreloader ? hasLoaderSafetyElapsed : true;
   const effectiveCoffeeLoaderVisibleTimeElapsed =
     shouldUseSplinePreloader && isMainSplineReadyOrTimedOut ? true : hasCoffeeLoaderVisibleTimeElapsed;
-  const shouldLoadMainSplineScene = !shouldUseSplinePreloader || isPreloaderSplineReady || hasLoaderSafetyElapsed;
+  const shouldLoadMainSplineScene = true;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -210,6 +210,8 @@ export default function PublicPortfolio() {
 
   const {
     isPublicExperienceReady,
+    isPublicExperienceVisible,
+    shouldRevealSplineBackground,
     shouldRenderPreloader,
     shouldHidePreloaderScene,
     shouldFadePreloaderLayer,
@@ -381,7 +383,8 @@ export default function PublicPortfolio() {
       <div className={`public-site relative public-site--${startupPhase}`}>
         <Suspense fallback={null}>
           <SplineBackground
-            isVisible={shouldLoadMainSplineScene}
+            shouldLoadScene={shouldLoadMainSplineScene}
+            isVisible={shouldRevealSplineBackground}
             onSceneReady={handleBackgroundReady}
           />
         </Suspense>
@@ -396,9 +399,9 @@ export default function PublicPortfolio() {
         )}
         <div
           className="public-site__content"
-          aria-hidden={isPublicExperienceReady ? undefined : 'true'}
+          aria-hidden={isPublicExperienceVisible ? undefined : 'true'}
           aria-busy={isPublicExperienceReady ? undefined : 'true'}
-          inert={isPublicExperienceReady ? undefined : true}
+          inert={isPublicExperienceVisible ? undefined : true}
         >
           <a href="#main-content" className="skip-link">
             {siteSettings.appCopy.skipLinkLabel}

@@ -136,10 +136,10 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
           <a
             href="/#home"
             onClick={(event) => handleNavLinkClick(event, '/#home')}
-            className="flex min-w-0 flex-col leading-none text-[rgb(var(--theme-text-rgb))]"
+            className="public-nav-brand flex min-w-0 flex-col leading-none text-[rgb(var(--theme-text-rgb))]"
           >
             <span className="font-heading text-3xl font-semibold">{siteSettings.branding.wordmark}</span>
-            <span className="mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-[rgb(var(--theme-muted-rgb))]">
+            <span className="public-nav-strapline mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-[rgb(var(--theme-muted-rgb))]">
               {siteSettings.branding.strapline}
             </span>
           </a>
@@ -231,7 +231,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                 </AnimatePresence>
               </div>
             ) : (
-              <button onClick={onLoginClick} className="theme-button-primary px-4 py-2.5 sm:px-5 sm:py-3">
+              <button onClick={onLoginClick} className="theme-button-primary whitespace-nowrap px-4 py-2.5 sm:px-5 sm:py-3">
                 {siteSettings.branding.signInLabel}
               </button>
             )}

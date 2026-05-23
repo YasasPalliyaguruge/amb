@@ -42,9 +42,12 @@ export function isPublicExperiencePrepared({
 }
 
 export function getPublicStartupUiState(startupPhase: PublicStartupPhase) {
+  const isPublicExperienceVisible = startupPhase === 'site-entering' || startupPhase === 'ready';
+
   return {
     isPublicExperienceReady: startupPhase === 'ready',
-    isPublicExperienceVisible: startupPhase === 'site-entering' || startupPhase === 'ready',
+    isPublicExperienceVisible,
+    shouldRevealSplineBackground: isPublicExperienceVisible,
     shouldRenderPreloader: startupPhase !== 'ready',
     // Fade the coffee loader away before the public flower scene enters so the
     // two Spline scenes never visually stack on top of each other.
