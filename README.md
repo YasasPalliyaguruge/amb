@@ -1,29 +1,38 @@
-# AMB Portfolio & Booking System
+# AMB Portfolio and Booking System
 
-This repo contains the public portfolio, booking flow, patient/admin dashboards, Firebase wiring, and Firestore rules for Aadhila M. Biswas.
+![AMB portfolio and booking system cover](assets/recruiter/cover.png)
 
-## Documentation
+> **Portfolio lens:** A polished service-business experience where expressive visual storytelling meets a real booking flow, Firebase roles, and maintainable operational documentation.
 
-1. [Current Status & Future Plan](docs/STATUS_AND_PLAN.md)
-2. [Firebase Setup Guide](docs/FIREBASE_SETUP.md)
-3. [Automated Email Setup Guide](docs/EMAIL_SETUP_GUIDE.md)
+This is the portfolio and consultation-booking site for Aadhila M. Biswas. It includes the public site, booking journey, authenticated patient and admin areas, Firebase wiring, Firestore rules, and the scrolling artwork sequences used on the homepage.
 
-## Running Locally
+## Run it locally
 
-Prerequisites: Node.js 18+
+Node.js 18 or newer is required.
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start the dev server:
-   ```bash
-   npm run dev
-   ```
-3. Open `http://localhost:3000`
+```bash
+npm ci
+npm run dev
+```
 
-## Environment Notes
+Vite serves the app on port 3000. The Firebase web configuration is read from `firebase-applet-config.json`; review the Firestore and Storage rules before connecting the site to a production project.
 
-- Firebase config is loaded from `firebase-applet-config.json`.
-- Artwork is served from `public/art`.
-- `VITE_GEMINI_API_KEY` is optional and only used by the AI chat widget.
+## Checks
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Browser smoke tests are available through `npm run test:e2e`. Playwright needs its browser binaries installed first:
+
+```bash
+npx playwright install
+```
+
+## Project notes
+
+- Homepage artwork is served from `public/art` and mapped in `src/theme/frameSequenceManifest.ts`.
+- Firebase setup and email setup are described in [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md) and [docs/EMAIL_SETUP_GUIDE.md](docs/EMAIL_SETUP_GUIDE.md).
+- [docs/STATUS_AND_PLAN.md](docs/STATUS_AND_PLAN.md) records the working product plan.
