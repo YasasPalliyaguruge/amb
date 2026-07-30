@@ -1,23 +1,28 @@
-# How to Generate Booking Slots (First-Time Setup)
+# Generating booking availability
 
-The Consultation Desk calendar is designed to read directly from your live database. Because you just connected a brand-new Firebase database, there are currently **0 slots created**.
+> **Project context:** Operator guide for the [AMB Portfolio and Booking System](../README.md). It describes a local/admin workflow, not a production availability policy.
 
-The system does not automatically assume you work 24/7. As the site owner, you must manually define your working schedule by generating slots. Once you generate them, they instantly appear on the public booking calendar.
+## Before you begin
 
-### Follow these steps to generate your first slots:
+- Start the app with `npm run dev` and use the Firebase environment intended for testing.
+- Sign in with an account that has the administrator role.
+- Agree the working hours, appointment length, buffer time, and any blocked dates with the practice owner before creating slots.
 
-1. Start your server:
-   ```bash
-   npm run dev
-   ```
-2. Open `http://localhost:3000` in your browser.
-3. Scroll to the top and click the **"Login"** button in the Navigation Bar.
-4. Sign in with Google using your admin email: **`yasaspalliyaguruge@gmail.com`**.
-5. Once logged in, click your Profile icon in the top right to open the dropdown menu.
-6. Click **"Admin Dashboard"**.
-7. In your Admin Dashboard, click the **"Manage Availability"** tab.
-8. Choose today's date (or tomorrow's date) on the date selector.
-9. Click the **"Generate Slots"** button (it will auto-create 45-minute sessions from 9 AM to 5 PM).
-10. Go back to the homepage (`/`) and scroll down to the **Consultation Desk**. Click the date you just generated slots for.
+## Create slots
 
-**You will instantly see all the time slots appear, beautifully formatted!** You can then click one and follow through the entire 3-step booking flow to verify it works flawlessly.
+1. Open the admin dashboard.
+2. Go to the availability-management view.
+3. Select a future date and confirm the proposed working window.
+4. Generate the slots, then inspect the result before sharing the date publicly.
+5. Open the public booking flow in a separate browser session and confirm that only the intended times are visible.
+
+## Operating safely
+
+- Generate only a short, reviewable range of dates at first.
+- Use the day-off or block controls before opening availability, not after a booking has been made.
+- Test cancellation and rescheduling with non-sensitive sample data.
+- If the schedule is edited directly in Firestore, recheck the public calendar and audit trail.
+
+## Handoff check
+
+The workflow is ready for an owner review when an admin can create availability, a normal visitor can see only available slots, and a booking cannot consume the same slot twice.
